@@ -1,0 +1,671 @@
+{
+  "config": {
+    "slots": [
+      "9:00–9:50",
+      "9:50–10:50",
+      "11:00–11:50",
+      "11:50–12:50",
+      "12:50–1:40",
+      "1:40–2:30",
+      "2:30–3:20",
+      "3:20–4:10"
+    ],
+    "days": [
+      "Monday",
+      "Tuesday",
+      "Wednesday",
+      "Thursday",
+      "Friday"
+    ],
+    "lunchIndex": 3
+  },
+  "groups": [
+    {
+      "name": "Final Year",
+      "order": 0
+    },
+    {
+      "name": "Third Year",
+      "order": 1
+    },
+    {
+      "name": "First Year",
+      "order": 2
+    }
+  ],
+  "trainers": [
+    {
+      "name": "Bhargav"
+    },
+    {
+      "name": "Sudhir"
+    },
+    {
+      "name": "Naveen"
+    },
+    {
+      "name": "Harshavardhini"
+    },
+    {
+      "name": "Suneeta"
+    },
+    {
+      "name": "Abhishek"
+    },
+    {
+      "name": "Abraham"
+    },
+    {
+      "name": "Veerababu"
+    },
+    {
+      "name": "Sampath"
+    },
+    {
+      "name": "Azar"
+    },
+    {
+      "name": "Peter"
+    },
+    {
+      "name": "Jayanth"
+    },
+    {
+      "name": "Prasanth"
+    },
+    {
+      "name": "Harika"
+    }
+  ],
+  "venues": [
+    {
+      "name": "Torii Block · 1st Floor Hall"
+    },
+    {
+      "name": "Torii Block · 2nd Floor Hall"
+    },
+    {
+      "name": "Examination Block · 3rd Floor Hall"
+    },
+    {
+      "name": "Examination Block · 2nd Floor Hall"
+    }
+  ],
+  "batches": [
+    {
+      "name": "AI Ready 2027 · Batch-1",
+      "group": "Final Year",
+      "dept": "",
+      "venue": "Torii Block · 2nd Floor Hall",
+      "count": 140,
+      "sessions": [
+        {
+          "day": "Monday",
+          "slots": [
+            6,
+            7
+          ],
+          "subject": "Coding",
+          "mainTrainers": [
+            "Suneeta",
+            "Abhishek"
+          ],
+          "supportTrainers": []
+        },
+        {
+          "day": "Tuesday",
+          "slots": [
+            6,
+            7
+          ],
+          "subject": "Coding",
+          "mainTrainers": [
+            "Suneeta",
+            "Abhishek"
+          ],
+          "supportTrainers": []
+        },
+        {
+          "day": "Wednesday",
+          "slots": [
+            6,
+            7
+          ],
+          "subject": "Coding",
+          "mainTrainers": [
+            "Suneeta",
+            "Abhishek"
+          ],
+          "supportTrainers": []
+        },
+        {
+          "day": "Thursday",
+          "slots": [
+            6,
+            7
+          ],
+          "subject": "Coding",
+          "mainTrainers": [
+            "Suneeta",
+            "Sudhir",
+            "Abhishek"
+          ],
+          "supportTrainers": []
+        },
+        {
+          "day": "Friday",
+          "slots": [
+            0,
+            1
+          ],
+          "subject": "GenAI",
+          "mainTrainers": [
+            "Bhargav"
+          ],
+          "supportTrainers": [
+            "Prasanth",
+            "Jayanth"
+          ]
+        },
+        {
+          "day": "Friday",
+          "slots": [
+            6,
+            7
+          ],
+          "subject": "GenAI",
+          "mainTrainers": [
+            "Bhargav"
+          ],
+          "supportTrainers": [
+            "Prasanth",
+            "Jayanth"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Placement 2027 · Batch-2",
+      "group": "Final Year",
+      "dept": "",
+      "venue": "Torii Block · 1st Floor Hall",
+      "count": 140,
+      "sessions": [
+        {
+          "day": "Monday",
+          "slots": [
+            6,
+            7
+          ],
+          "subject": "Coding",
+          "mainTrainers": [
+            "Sudhir"
+          ],
+          "supportTrainers": [
+            "Sampath"
+          ]
+        },
+        {
+          "day": "Tuesday",
+          "slots": [
+            6,
+            7
+          ],
+          "subject": "Coding",
+          "mainTrainers": [
+            "Sudhir"
+          ],
+          "supportTrainers": [
+            "Sampath"
+          ]
+        },
+        {
+          "day": "Wednesday",
+          "slots": [
+            6,
+            7
+          ],
+          "subject": "Coding",
+          "mainTrainers": [
+            "Sudhir"
+          ],
+          "supportTrainers": [
+            "Sampath"
+          ]
+        },
+        {
+          "day": "Thursday",
+          "slots": [
+            6,
+            7
+          ],
+          "subject": "Aptitude",
+          "mainTrainers": [
+            "Naveen"
+          ],
+          "supportTrainers": [
+            "Sampath"
+          ]
+        },
+        {
+          "day": "Friday",
+          "slots": [
+            0,
+            1
+          ],
+          "subject": "SQL",
+          "mainTrainers": [
+            "Harshavardhini",
+            "Sampath"
+          ],
+          "supportTrainers": []
+        },
+        {
+          "day": "Friday",
+          "slots": [
+            6,
+            7
+          ],
+          "subject": "SQL",
+          "mainTrainers": [
+            "Harshavardhini",
+            "Sampath"
+          ],
+          "supportTrainers": []
+        }
+      ]
+    },
+    {
+      "name": "AI Ready 2028 · Batch-1",
+      "group": "Third Year",
+      "dept": "CSE",
+      "venue": "Examination Block · 2nd Floor Hall",
+      "count": 100,
+      "sessions": [
+        {
+          "day": "Monday",
+          "slots": [
+            4,
+            5
+          ],
+          "subject": "GenAI",
+          "mainTrainers": [
+            "Bhargav"
+          ],
+          "supportTrainers": [
+            "Prasanth",
+            "Jayanth"
+          ]
+        },
+        {
+          "day": "Wednesday",
+          "slots": [
+            4,
+            5
+          ],
+          "subject": "GenAI",
+          "mainTrainers": [
+            "Bhargav"
+          ],
+          "supportTrainers": [
+            "Prasanth",
+            "Jayanth"
+          ]
+        },
+        {
+          "day": "Friday",
+          "slots": [
+            0,
+            1
+          ],
+          "subject": "Coding",
+          "mainTrainers": [
+            "Suneeta",
+            "Sudhir"
+          ],
+          "supportTrainers": [
+            "Abhishek"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "AI Ready 2028 · Batch-2",
+      "group": "Third Year",
+      "dept": "AIML, DS, ISE",
+      "venue": "Examination Block · 2nd Floor Hall",
+      "count": 100,
+      "sessions": [
+        {
+          "day": "Tuesday",
+          "slots": [
+            4,
+            5
+          ],
+          "subject": "GenAI",
+          "mainTrainers": [
+            "Bhargav"
+          ],
+          "supportTrainers": [
+            "Prasanth",
+            "Jayanth"
+          ]
+        },
+        {
+          "day": "Wednesday",
+          "slots": [
+            0,
+            1
+          ],
+          "subject": "GenAI",
+          "mainTrainers": [
+            "Bhargav"
+          ],
+          "supportTrainers": [
+            "Prasanth",
+            "Jayanth"
+          ]
+        },
+        {
+          "day": "Friday",
+          "slots": [
+            4,
+            5
+          ],
+          "subject": "Coding",
+          "mainTrainers": [
+            "Suneeta",
+            "Sudhir"
+          ],
+          "supportTrainers": [
+            "Abhishek"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Placement 2028 · Batch-3",
+      "group": "Third Year",
+      "dept": "CSE",
+      "venue": "Examination Block · 3rd Floor Hall",
+      "count": 100,
+      "sessions": [
+        {
+          "day": "Monday",
+          "slots": [
+            4,
+            5
+          ],
+          "subject": "Claude",
+          "mainTrainers": [
+            "Peter",
+            "Naveen",
+            "Azar"
+          ],
+          "supportTrainers": [
+            "Harika"
+          ]
+        },
+        {
+          "day": "Wednesday",
+          "slots": [
+            4,
+            5
+          ],
+          "subject": "Claude",
+          "mainTrainers": [
+            "Peter",
+            "Naveen",
+            "Azar"
+          ],
+          "supportTrainers": [
+            "Harika"
+          ]
+        },
+        {
+          "day": "Friday",
+          "slots": [
+            0,
+            1
+          ],
+          "subject": "Aptitude",
+          "mainTrainers": [
+            "Naveen"
+          ],
+          "supportTrainers": [
+            "Harika"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Placement 2028 · Batch-4",
+      "group": "Third Year",
+      "dept": "AIML, DS, ISE",
+      "venue": "Examination Block · 3rd Floor Hall",
+      "count": 100,
+      "sessions": [
+        {
+          "day": "Tuesday",
+          "slots": [
+            4,
+            5
+          ],
+          "subject": "Claude",
+          "mainTrainers": [
+            "Peter",
+            "Naveen",
+            "Azar"
+          ],
+          "supportTrainers": [
+            "Harika"
+          ]
+        },
+        {
+          "day": "Wednesday",
+          "slots": [
+            0,
+            1
+          ],
+          "subject": "Claude",
+          "mainTrainers": [
+            "Peter",
+            "Naveen",
+            "Azar"
+          ],
+          "supportTrainers": [
+            "Harika"
+          ]
+        },
+        {
+          "day": "Friday",
+          "slots": [
+            4,
+            5
+          ],
+          "subject": "Aptitude",
+          "mainTrainers": [
+            "Naveen"
+          ],
+          "supportTrainers": [
+            "Harika"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "C · Batch-1",
+      "group": "First Year",
+      "dept": "",
+      "venue": "",
+      "count": 0,
+      "sessions": [
+        {
+          "day": "Monday",
+          "slots": [
+            0,
+            1
+          ],
+          "subject": "C Programming",
+          "mainTrainers": [],
+          "supportTrainers": []
+        },
+        {
+          "day": "Tuesday",
+          "slots": [
+            2,
+            3
+          ],
+          "subject": "C Programming",
+          "mainTrainers": [],
+          "supportTrainers": []
+        }
+      ]
+    },
+    {
+      "name": "C · Batch-2",
+      "group": "First Year",
+      "dept": "",
+      "venue": "",
+      "count": 0,
+      "sessions": [
+        {
+          "day": "Monday",
+          "slots": [
+            2,
+            3
+          ],
+          "subject": "C Programming",
+          "mainTrainers": [],
+          "supportTrainers": []
+        },
+        {
+          "day": "Wednesday",
+          "slots": [
+            0,
+            1
+          ],
+          "subject": "C Programming",
+          "mainTrainers": [],
+          "supportTrainers": []
+        }
+      ]
+    },
+    {
+      "name": "C · Batch-3",
+      "group": "First Year",
+      "dept": "",
+      "venue": "",
+      "count": 0,
+      "sessions": [
+        {
+          "day": "Monday",
+          "slots": [
+            2,
+            3
+          ],
+          "subject": "C Programming",
+          "mainTrainers": [],
+          "supportTrainers": []
+        },
+        {
+          "day": "Wednesday",
+          "slots": [
+            0,
+            1
+          ],
+          "subject": "C Programming",
+          "mainTrainers": [],
+          "supportTrainers": []
+        }
+      ]
+    },
+    {
+      "name": "C · Batch-4",
+      "group": "First Year",
+      "dept": "",
+      "venue": "",
+      "count": 0,
+      "sessions": [
+        {
+          "day": "Wednesday",
+          "slots": [
+            2,
+            3
+          ],
+          "subject": "C Programming",
+          "mainTrainers": [],
+          "supportTrainers": []
+        },
+        {
+          "day": "Thursday",
+          "slots": [
+            0,
+            1
+          ],
+          "subject": "C Programming",
+          "mainTrainers": [],
+          "supportTrainers": []
+        }
+      ]
+    },
+    {
+      "name": "Python · Batch-1",
+      "group": "First Year",
+      "dept": "",
+      "venue": "",
+      "count": 0,
+      "sessions": [
+        {
+          "day": "Monday",
+          "slots": [
+            0,
+            1
+          ],
+          "subject": "Python",
+          "mainTrainers": [],
+          "supportTrainers": []
+        },
+        {
+          "day": "Tuesday",
+          "slots": [
+            2,
+            3
+          ],
+          "subject": "Python",
+          "mainTrainers": [],
+          "supportTrainers": []
+        }
+      ]
+    },
+    {
+      "name": "Python · Batch-2",
+      "group": "First Year",
+      "dept": "",
+      "venue": "",
+      "count": 0,
+      "sessions": [
+        {
+          "day": "Wednesday",
+          "slots": [
+            2,
+            3
+          ],
+          "subject": "Python",
+          "mainTrainers": [],
+          "supportTrainers": []
+        },
+        {
+          "day": "Thursday",
+          "slots": [
+            0,
+            1
+          ],
+          "subject": "Python",
+          "mainTrainers": [],
+          "supportTrainers": []
+        }
+      ]
+    }
+  ]
+}
