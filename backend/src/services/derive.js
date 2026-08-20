@@ -47,7 +47,7 @@ function collapseRows(sessions, config) {
   for (const s of sessions) {
     const slotList = [...s.slots].sort((a, b) => a - b);
     const key = JSON.stringify([
-      slotList, s.subject,
+      slotList, s.subject, s.venue || '',
       [...(s.mainTrainers || [])], [...(s.supportTrainers || [])],
     ]);
     if (!buckets.has(key)) buckets.set(key, { session: s, slotList, dayIdx: [] });
@@ -78,6 +78,7 @@ function collapseRows(sessions, config) {
         slot: slotLabel(slotList),
         slots: slotList,
         subject: session.subject,
+        venue: session.venue || '',
         trainer: main.length ? main.join(', ') : 'To be assigned',
         support: support.length ? support.join(', ') : '—',
         mainList: main,
@@ -100,15 +101,22 @@ export function buildSchedule({ config, groups, trainers, venues, batches }) {
   const slotCount = slots.length;
 
   /* ── batch cards, grouped by year ── */
-  const batchCards = batches.map(b => ({
-    id: String(b._id || b.id || b.name),
-    name: b.name,
-    group: b.group,
-    dept: b.dept || '',
-    venue: b.venue || '—',
-    count: b.count || 0,
-    rows: collapseRows(b.sessions || [], config),
-  }));
+  const batchCards = batches.map(b => {
+    const rows = collapseRows(b.sessions || [], config);
+    /* A batch can meet in different halls on different days now, so there is
+       no single "the" venue any more — just the distinct set actually in use,
+       read off the rows so it always agrees with what's displayed. */
+    const venues = [...new Set(rows.map(r => r.venue).filter(Boolean))];
+    return {
+      id: String(b._id || b.id || b.name),
+      name: b.name,
+      group: b.group,
+      dept: b.dept || '',
+      venues,
+      count: b.count || 0,
+      rows,
+    };
+  });
 
   const ordered = [...groups].sort((a, b) => (a.order || 0) - (b.order || 0));
   const groupViews = ordered
@@ -166,10 +174,10 @@ export function buildSchedule({ config, groups, trainers, venues, batches }) {
           tRole[name][s.day][i] = 'support';
         }
       }
-      if (b.venue && vGrid[b.venue]) {
+      if (s.venue && vGrid[s.venue]) {
         for (const i of s.slots) {
           if (i < 0 || i >= slotCount) continue;
-          claim(vGrid, b.venue, s.day, i, b.name, 'venue');
+          claim(vGrid, s.venue, s.day, i, b.name, 'venue');
         }
       }
     }

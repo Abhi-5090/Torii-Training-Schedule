@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '../lib/api.js';
 import { Field } from './ui.jsx';
+import HallPicker from './HallPicker.jsx';
 
 /*
  * Asks the API who is already busy at this day + period, so a clash shows up
@@ -54,7 +55,7 @@ function MentorPicker({ label, help, all, chosen, exclude, busy, onToggle }) {
   );
 }
 
-export default function SessionEditor({ index, session, config, trainers, batchId, onChange, onRemove }) {
+export default function SessionEditor({ index, session, config, trainers, venues, batchId, onChange, onRemove }) {
   const busy = useAvailability(session.day, session.slots, batchId);
 
   const set = patch => onChange({ ...session, ...patch });
@@ -115,6 +116,15 @@ export default function SessionEditor({ index, session, config, trainers, batchI
         </div>
       </Field>
 
+      <HallPicker
+        scope="session"
+        venues={venues}
+        sessions={[session]}
+        value={session.venue}
+        batchId={batchId}
+        onChange={venue => set({ venue })}
+      />
+
       <div className="sess-grid">
         <MentorPicker
           label="Main mentors"
@@ -140,5 +150,5 @@ export default function SessionEditor({ index, session, config, trainers, batchI
 }
 
 export const blankSession = () => ({
-  day: '', slots: [], subject: '', mainTrainers: [], supportTrainers: [],
+  day: '', slots: [], subject: '', venue: '', mainTrainers: [], supportTrainers: [],
 });

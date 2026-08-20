@@ -22,7 +22,7 @@ export default function VenuesTab() {
 
   const flash = msg => { setOk(msg); setError(''); setTimeout(() => setOk(''), 2600); };
 
-  const users = name => batches.filter(b => b.venue === name);
+  const users = name => batches.filter(b => b.sessions.some(s => s.venue === name));
 
   async function save() {
     setError('');
@@ -39,8 +39,9 @@ export default function VenuesTab() {
 
   async function remove(v) {
     const held = users(v.name);
+    const sessionCount = held.reduce((n, b) => n + b.sessions.filter(s => s.venue === v.name).length, 0);
     const extra = held.length
-      ? `\n\n${held.length} batch(es) are in this hall — they will be left without one:\n${held.map(b => `• ${b.name}`).join('\n')}`
+      ? `\n\n${sessionCount} session(s) across ${held.length} batch(es) use this hall — they will be left without one:\n${held.map(b => `• ${b.name}`).join('\n')}`
       : '';
     if (!window.confirm(`Delete "${v.name}"?${extra}\n\nThis cannot be undone.`)) return;
     try {

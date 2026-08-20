@@ -9,6 +9,14 @@ function DayLabel({ day }) {
 }
 
 export default function BatchCard({ batch, dimUnless }) {
+  /* A batch usually meets in one room all week — the common case keeps the
+     single footer it always had. Once its sessions split across halls, that
+     one line can no longer say which room is which, so each row grows its
+     own instead. */
+  const distinctVenues = [...new Set(batch.venues || [])];
+  const oneVenue = distinctVenues.length === 1 ? distinctVenues[0] : null;
+  const perRowVenue = distinctVenues.length > 1;
+
   return (
     <article className="bcard rv">
       <header>
@@ -31,14 +39,17 @@ export default function BatchCard({ batch, dimUnless }) {
                 {r.support && r.support !== '—' && (
                   <div><span className="lbl s">Support</span><span className="s">{r.support}</span></div>
                 )}
+                {perRowVenue && r.venue && (
+                  <div><span className="lbl v">Hall</span><span className="v">{r.venue}</span></div>
+                )}
               </div>
             </div>
           </div>
         ))}
       </div>
 
-      {batch.venue && batch.venue !== '—' && (
-        <div className="venue-foot"><PinIcon />{batch.venue}</div>
+      {oneVenue && (
+        <div className="venue-foot"><PinIcon />{oneVenue}</div>
       )}
     </article>
   );

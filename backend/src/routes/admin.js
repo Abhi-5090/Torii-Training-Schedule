@@ -177,7 +177,13 @@ router.put('/venues/:id', wrap(async (req, res) => {
   const name = str(req.body?.name) || venue.name;
   if (name !== venue.name) {
     if (await Venue.findOne({ name })) return fail(res, 409, `"${name}" already exists`);
-    await Batch.updateMany({ venue: venue.name }, { venue: name });
+    /* venue lives on each session now, not on the batch, so the rename has to
+       reach inside the sessions array */
+    await Batch.updateMany(
+      { 'sessions.venue': venue.name },
+      { $set: { 'sessions.$[s].venue': name } },
+      { arrayFilters: [{ 's.venue': venue.name }] },
+    );
   }
 
   venue.name = name;
@@ -191,15 +197,20 @@ router.delete('/venues/:id', wrap(async (req, res) => {
   const venue = await Venue.findById(req.params.id);
   if (!venue) return fail(res, 404, 'Hall not found');
 
-  const freed = await Batch.updateMany({ venue: venue.name }, { venue: '' });
+  const freed = await Batch.updateMany(
+    { 'sessions.venue': venue.name },
+    { $set: { 'sessions.$[s].venue': '' } },
+    { arrayFilters: [{ 's.venue': venue.name }] },
+  );
   await venue.deleteOne();
-  res.json({ ok: true, batchesUnassigned: freed.modifiedCount });
+  res.json({ ok: true, sessionsUnassigned: freed.modifiedCount });
 }));
 
 /* ───────────────────────── batches + their sessions ───────────────────────── */
 
 async function validateSessions(raw, res) {
   const config = await Config.findOne({ key: 'default' }).lean();
+  const venueNames = new Set((await Venue.find().lean()).map(v => v.name));
   const sessions = [];
 
   for (const s of Array.isArray(raw) ? raw : []) {
@@ -214,11 +225,14 @@ async function validateSessions(raw, res) {
     const subject = str(s?.subject);
     if (!subject) { fail(res, 400, `The ${day} session needs a subject`); return null; }
 
+    const venue = str(s?.venue);
+    if (venue && !venueNames.has(venue)) { fail(res, 400, `"${venue}" is not a known hall`); return null; }
+
     const clean = list => [...new Set((Array.isArray(list) ? list : []).map(str).filter(Boolean))];
     const mainTrainers = clean(s?.mainTrainers);
     const supportTrainers = clean(s?.supportTrainers).filter(n => !mainTrainers.includes(n));
 
-    sessions.push({ day, slots, subject, mainTrainers, supportTrainers });
+    sessions.push({ day, slots, subject, venue, mainTrainers, supportTrainers });
   }
   return sessions;
 }
@@ -247,7 +261,6 @@ router.post('/batches', wrap(async (req, res) => {
   res.status(201).json(await Batch.create({
     name, group,
     dept: str(req.body?.dept),
-    venue: str(req.body?.venue),
     count: Number(req.body?.count) || 0,
     order: req.body?.order ?? ((last?.order ?? -1) + 1),
     sessions,
@@ -274,7 +287,6 @@ router.put('/batches/:id', wrap(async (req, res) => {
 
   batch.name = name;
   if (req.body?.dept !== undefined) batch.dept = str(req.body.dept);
-  if (req.body?.venue !== undefined) batch.venue = str(req.body.venue);
   if (req.body?.count !== undefined) batch.count = Number(req.body.count) || 0;
   if (req.body?.order !== undefined) batch.order = Number(req.body.order);
   await batch.save();

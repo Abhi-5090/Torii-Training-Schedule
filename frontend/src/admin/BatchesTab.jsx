@@ -3,10 +3,9 @@ import { api } from '../lib/api.js';
 import { announceChange } from './Console.jsx';
 import { Modal, PageHead, Field, Notice, EmptyState, Spinner, confirmDelete } from './ui.jsx';
 import SessionEditor, { blankSession } from './SessionEditor.jsx';
-import HallPicker from './HallPicker.jsx';
 
 const emptyBatch = groups => ({
-  name: '', group: groups[0]?.name || '', dept: '', venue: '', count: 0, sessions: [blankSession()],
+  name: '', group: groups[0]?.name || '', dept: '', count: 0, sessions: [blankSession()],
 });
 
 export default function BatchesTab() {
@@ -44,7 +43,7 @@ export default function BatchesTab() {
     try {
       const body = {
         name: draft.name, group: draft.group, dept: draft.dept,
-        venue: draft.venue, count: Number(draft.count) || 0, sessions: draft.sessions,
+        count: Number(draft.count) || 0, sessions: draft.sessions,
       };
       if (draft._id) await api.update('batches', draft._id, body);
       else await api.create('batches', body);
@@ -116,12 +115,14 @@ export default function BatchesTab() {
             <table className="tbl">
               <thead>
                 <tr>
-                  <th>Batch</th><th>Year</th><th>Sessions</th><th>Hall</th><th>Students</th><th className="act">Actions</th>
+                  <th>Batch</th><th>Year</th><th>Sessions</th><th>Halls</th><th>Students</th><th className="act">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {shown.map(b => {
                   const unstaffed = b.sessions.filter(s => !s.mainTrainers.length).length;
+                  const noHall = b.sessions.filter(s => !s.venue).length;
+                  const halls = [...new Set(b.sessions.map(s => s.venue).filter(Boolean))];
                   return (
                     <tr key={b._id}>
                       <td className="nm">
@@ -133,7 +134,10 @@ export default function BatchesTab() {
                         <span className="mono">{b.sessions.length}</span>
                         {!!unstaffed && <span className="pill-tag warn" style={{ marginLeft: 8 }}>{unstaffed} unstaffed</span>}
                       </td>
-                      <td className="muted">{b.venue || <span className="pill-tag warn">not set</span>}</td>
+                      <td className="muted" style={{ fontSize: 12.5 }}>
+                        {halls.length ? halls.join(', ') : <span className="pill-tag warn">not set</span>}
+                        {!!noHall && !!halls.length && <span className="pill-tag warn" style={{ marginLeft: 6 }}>{noHall} missing</span>}
+                      </td>
                       <td className="mono">{b.count || '—'}</td>
                       <td className="act">
                         <button className="btn btn-ghost btn-sm" onClick={() => setEditing(structuredClone(b))}>Edit</button>
@@ -206,17 +210,10 @@ export default function BatchesTab() {
             </Field>
           </div>
 
-          <HallPicker
-            venues={venues}
-            sessions={editing.sessions}
-            value={editing.venue}
-            batchId={editing._id}
-            onChange={venue => setEditing({ ...editing, venue })}
-          />
-
           <h2 style={{ fontSize: 16, margin: '26px 0 6px' }}>Weekly sessions</h2>
           <p className="sub" style={{ marginBottom: 16 }}>
-            Anyone already teaching at the chosen day and period is marked <b>busy</b> so you can see a clash before saving.
+            Each session picks its own hall — a batch can meet in a different room on a different day.
+            Anyone or anywhere already booked at the chosen day and period is marked <b>busy</b> so you can see a clash before saving.
           </p>
 
           {!editing.sessions.length && (
@@ -230,6 +227,7 @@ export default function BatchesTab() {
               session={s}
               config={config}
               trainers={trainers}
+              venues={venues}
               batchId={editing._id}
               onChange={next => {
                 const sessions = [...editing.sessions];

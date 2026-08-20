@@ -10,6 +10,10 @@
 @media(max-width:820px){ .ttgrid{grid-template-columns:52px repeat(var(--daycols,5),minmax(68px,1fr))} }
 @media(max-width:480px){ .ttgrid{grid-template-columns:42px repeat(var(--daycols,5),minmax(56px,1fr))} }
 
+/* ── per-row hall, shown only when a batch's sessions use more than one ── */
+.srow .who .v{color:var(--ink-2); font-weight:600}
+.srow .who .lbl.v{background:var(--line-2); color:var(--ink-2); border:1px solid var(--line)}
+
 /* ── slot-number badge on a batch card ── */
 .srow .time .slot{font-family:'JetBrains Mono',monospace; font-size:9.5px; font-weight:600; letter-spacing:.08em;
   text-transform:uppercase; background:var(--orange-tint); color:var(--orange-deep); border:1px solid var(--orange-soft);

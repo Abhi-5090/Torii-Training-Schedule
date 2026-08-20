@@ -20,7 +20,7 @@ export default function Dashboard() {
   const students = data.batches.reduce((s, b) => s + (b.count || 0), 0);
   const sessions = data.batches.reduce((s, b) => s + b.rows.length, 0);
   const unassigned = data.batches.filter(b => b.rows.some(r => !r.mainList.length));
-  const noVenue = data.batches.filter(b => !b.venue || b.venue === '—');
+  const noVenue = data.batches.filter(b => b.rows.some(r => !r.venue));
 
   return (
     <>
@@ -74,7 +74,7 @@ export default function Dashboard() {
                 {[...new Set([...unassigned, ...noVenue])].map(b => {
                   const gaps = [];
                   if (b.rows.some(r => !r.mainList.length)) gaps.push('main mentor');
-                  if (!b.venue || b.venue === '—') gaps.push('training hall');
+                  if (b.rows.some(r => !r.venue)) gaps.push('training hall');
                   return (
                     <tr key={b.id}>
                       <td className="nm">{b.name}</td>

@@ -17,7 +17,7 @@ const describe = c => `${shortDay(c.day)} ${c.slot} · ${c.batch}`;
  * a time. Occupied halls are still selectable — sharing a hall is sometimes
  * deliberate — but the clash is spelled out before it is saved.
  */
-export default function HallPicker({ venues, sessions, value, batchId, onChange }) {
+export default function HallPicker({ venues, sessions, value, batchId, onChange, scope = 'batch' }) {
   const [state, setState] = useState({ loading: false, venues: [] });
 
   /* only sessions that are actually pinned down can be checked */
@@ -47,12 +47,15 @@ export default function HallPicker({ venues, sessions, value, batchId, onChange 
 
   const freeCount = state.venues.filter(v => v.free).length;
 
+  const noun = scope === 'session' ? 'this session' : "this batch's session times";
   const help = !when.length
-    ? 'Set a day and periods on the sessions below and the halls free at those times will be listed here.'
+    ? (scope === 'session'
+        ? 'Set a day and periods above and the halls free at that time will be listed here.'
+        : 'Set a day and periods on the sessions below and the halls free at those times will be listed here.')
     : state.loading
       ? 'Checking which halls are free…'
       : known
-        ? `${freeCount} of ${state.venues.length} halls are free at every one of this batch's session times.`
+        ? `${freeCount} of ${state.venues.length} halls are free at ${noun}.`
         : 'Could not read hall occupancy.';
 
   return (
@@ -76,7 +79,7 @@ export default function HallPicker({ venues, sessions, value, batchId, onChange 
       )}
 
       {known && !!when.length && (
-        <Field label="Hall availability at this batch's times">
+        <Field label={scope === 'session' ? 'Hall availability at this time' : "Hall availability at this batch's times"}>
           <div className="halls">
             {state.venues.map(v => (
               <button
@@ -90,7 +93,7 @@ export default function HallPicker({ venues, sessions, value, batchId, onChange 
                 <span className="hs">
                   {v.name === value && <b>assigned</b>}
                   {v.free
-                    ? 'free at all times'
+                    ? (scope === 'session' ? 'free' : 'free at all times')
                     : v.conflicts.map(describe).join(' · ')}
                 </span>
               </button>

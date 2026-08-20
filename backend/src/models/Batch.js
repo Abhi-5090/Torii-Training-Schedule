@@ -7,6 +7,7 @@ const sessionSchema = new mongoose.Schema({
   day:             { type: String, required: true },
   slots:           { type: [Number], required: true },   // indexes into Config.slots
   subject:         { type: String, required: true, trim: true },
+  venue:           { type: String, default: '' },        // Venue.name, '' = unassigned — per session, not per batch, since a batch can meet in different halls on different days
   mainTrainers:    { type: [String], default: [] },
   supportTrainers: { type: [String], default: [] },
 }, { _id: true });
@@ -15,7 +16,6 @@ const batchSchema = new mongoose.Schema({
   name:     { type: String, required: true, unique: true, trim: true },
   group:    { type: String, required: true },            // YearGroup.name
   dept:     { type: String, default: '' },
-  venue:    { type: String, default: '' },               // Venue.name, '' = unassigned
   count:    { type: Number, default: 0 },
   order:    { type: Number, default: 0 },
   sessions: { type: [sessionSchema], default: [] },
