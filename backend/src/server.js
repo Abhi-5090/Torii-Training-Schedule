@@ -9,9 +9,17 @@ import authRoutes from './routes/auth.js';
 import adminRoutes from './routes/admin.js';
 import scheduleRoutes from './routes/schedule.js';
 
-const app = express();
-
-app.use(cors({ origin: process.env.CLIENT_ORIGIN || 'http://localhost:5173', credentials: true }));
+const clientOrigin = process.env.CLIENT_ORIGIN;
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true);
+    if (!clientOrigin || clientOrigin === '*' || origin === clientOrigin || origin.endsWith('.vercel.app') || origin.includes('localhost') || origin.includes('toriiminds.com')) {
+      return callback(null, true);
+    }
+    return callback(null, true);
+  },
+  credentials: true,
+}));
 app.use(express.json({ limit: '1mb' }));
 app.use(cookieParser());
 

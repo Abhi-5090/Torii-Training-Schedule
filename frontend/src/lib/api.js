@@ -1,6 +1,10 @@
+const RAW_API_URL = import.meta.env.VITE_API_URL || 'https://torii-schedule-api.onrender.com';
+const API_BASE = RAW_API_URL.replace(/\/+$/, '');
+
 /* Every call carries the session cookie; nothing here reads or stores a token. */
 async function call(path, { method = 'GET', body } = {}) {
-  const res = await fetch(`/api${path}`, {
+  const url = API_BASE.startsWith('http') ? `${API_BASE}/api${path}` : `${API_BASE}${path}`;
+  const res = await fetch(url, {
     method,
     credentials: 'include',
     headers: body ? { 'Content-Type': 'application/json' } : undefined,

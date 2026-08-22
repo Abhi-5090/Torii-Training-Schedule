@@ -7,7 +7,7 @@ import App from './App.jsx';
 
 createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <BrowserRouter basename="/schedules">
+    <BrowserRouter basename={import.meta.env.BASE_URL || '/'}>
       <App />
     </BrowserRouter>
   </React.StrictMode>,

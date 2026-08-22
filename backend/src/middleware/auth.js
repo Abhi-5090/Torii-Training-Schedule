@@ -11,12 +11,13 @@ export function signToken(admin) {
 }
 
 /* Sent as an httpOnly cookie so no token ever touches client-side JS.
-   sameSite 'lax' keeps it working across the Vite dev proxy. */
+   sameSite 'none' + secure: true in production allows cookies to work across Vercel <-> Render. */
 export function cookieOptions() {
+  const isProd = process.env.NODE_ENV === 'production';
   return {
     httpOnly: true,
-    sameSite: 'lax',
-    secure: process.env.NODE_ENV === 'production',
+    sameSite: isProd ? 'none' : 'lax',
+    secure: isProd,
     maxAge: 12 * 60 * 60 * 1000,
     path: '/',
   };
