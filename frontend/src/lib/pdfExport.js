@@ -65,6 +65,38 @@ function addDocFooter(doc) {
   }
 }
 
+// Helper to format trainer's trainings breakdown if not already calculated
+function getTrainerBreakdowns(trainer, days = []) {
+  const trainingsBreakdown = trainer.trainingsBreakdown ? { ...trainer.trainingsBreakdown } : {};
+  const activitiesBreakdown = trainer.activitiesBreakdown ? { ...trainer.activitiesBreakdown } : {};
+
+  if (!Object.keys(trainingsBreakdown).length && trainer.grid && trainer.roles) {
+    for (const d of Object.keys(trainer.grid)) {
+      const gRow = trainer.grid[d] || [];
+      const rRow = trainer.roles[d] || [];
+      for (let i = 0; i < gRow.length; i++) {
+        const val = gRow[i];
+        const role = rRow[i];
+        if ((role === 'main' || role === 'support') && val) {
+          trainingsBreakdown[val] = (trainingsBreakdown[val] || 0) + 1;
+        } else if (role === 'other' && val) {
+          activitiesBreakdown[val] = (activitiesBreakdown[val] || 0) + 1;
+        }
+      }
+    }
+  }
+
+  const totalTrainings = (trainer.mainCount || 0) + (trainer.supportCount || 0);
+  const totalOther = trainer.otherCount || Object.values(activitiesBreakdown).reduce((s, n) => s + n, 0);
+
+  return {
+    trainingsBreakdown,
+    activitiesBreakdown,
+    totalTrainings,
+    totalOther,
+  };
+}
+
 /* ───────────────────────────────────────────────────────────────────────────
    1. EXPORT MASTER BATCHES SCHEDULE PDF
    ─────────────────────────────────────────────────────────────────────────── */
@@ -177,31 +209,51 @@ export function exportTrainerPDF(trainer, config) {
   const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
   const { slots, days, lunchIndex } = config;
 
-  addDocHeader(doc, `Trainer Timetable & Workload: ${trainer.name}`, 'Individual Mentor Weekly Schedule');
+  addDocHeader(doc, `Trainer Timetable & Workload: ${trainer.name}`, 'Individual Mentor Weekly Schedule & Assignments');
 
-  // Workload metrics
-  const breakdownList = Object.entries(trainer.activitiesBreakdown || {})
+  const { trainingsBreakdown, activitiesBreakdown, totalTrainings, totalOther } = getTrainerBreakdowns(trainer, days);
+
+  const trainingsList = Object.entries(trainingsBreakdown)
+    .map(([tName, count]) => `${tName}: ${count} slot(s)`)
+    .join('  •  ');
+
+  const otherList = Object.entries(activitiesBreakdown)
     .map(([task, count]) => `${task}: ${count} slot(s)`)
     .join('  •  ');
 
-  const totalClasses = (trainer.mainCount || 0) + (trainer.supportCount || 0);
-  const totalOccupied = totalClasses + (trainer.otherCount || 0) + (trainer.lunchCount || 0);
+  const totalOccupied = totalTrainings + totalOther + (trainer.lunchCount || 0);
+
+  const bodyRows = [
+    [
+      `Total Trainings: ${totalTrainings} slots\n(${trainer.mainCount || 0} Main, ${trainer.supportCount || 0} Support)`,
+      `Other Activities: ${totalOther} slots`,
+      `Free Periods: ${trainer.totalFree || 0} slots`,
+      `Total Active Load: ${totalOccupied} slots`,
+    ],
+  ];
+
+  if (trainingsList) {
+    bodyRows.push([{
+      content: `All Trainings (Batches): ${trainingsList}`,
+      colSpan: 4,
+      styles: { fontStyle: 'bold', textColor: [184, 56, 14], fillColor: [255, 248, 244] },
+    }]);
+  }
+
+  if (otherList) {
+    bodyRows.push([{
+      content: `Other Work Assignments: ${otherList}`,
+      colSpan: 4,
+      styles: { fontStyle: 'italic', textColor: [30, 64, 120], fillColor: [244, 248, 254] },
+    }]);
+  }
 
   autoTable(doc, {
     startY: 48,
     margin: { left: 14, right: 14 },
-    theme: 'plain',
-    styles: { fontSize: 8.5, cellPadding: 2.2, font: 'helvetica' },
-    body: [
-      [
-        `Main Mentor: ${trainer.mainCount || 0} slots`,
-        `Support Mentor: ${trainer.supportCount || 0} slots`,
-        `Assigned Work: ${trainer.otherCount || 0} slots`,
-        `Free Periods: ${trainer.totalFree || 0} slots`,
-        `Total Active Load: ${totalOccupied} slots`,
-      ],
-      ...(breakdownList ? [[{ content: `Special Assignments: ${breakdownList}`, colSpan: 5, styles: { fontStyle: 'italic', textColor: MUTED_INK } }]] : []),
-    ],
+    theme: 'grid',
+    styles: { fontSize: 8.5, cellPadding: 2.2, font: 'helvetica', lineColor: LINE_BORDER },
+    body: bodyRows,
     didParseCell: (dataCell) => {
       if (dataCell.row.index === 0) {
         dataCell.cell.styles.fillColor = ACCENT_BG;
@@ -298,24 +350,28 @@ export function exportAllTrainersPDF(scheduleData) {
   const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
   const { trainers, slots, days, lunchIndex } = scheduleData;
 
-  // Page 1: Executive Trainer Workload Summary
-  addDocHeader(doc, 'Consolidated Trainer Workload & Deployment Matrix', 'Faculty & Mentor Master Workload Summary');
+  // Page 1: Executive Trainer Workload Summary Matrix
+  addDocHeader(doc, 'Consolidated Trainer Workload & Deployment Matrix', 'Faculty & Mentor Master Workload and Trainings Summary');
 
   const summaryRows = trainers.map((t, idx) => {
-    const taskDetails = Object.entries(t.activitiesBreakdown || {})
+    const { trainingsBreakdown, activitiesBreakdown, totalTrainings, totalOther } = getTrainerBreakdowns(t, days);
+
+    const trainingsDetails = Object.entries(trainingsBreakdown)
+      .map(([bName, count]) => `${bName} (${count})`)
+      .join(', ');
+
+    const otherDetails = Object.entries(activitiesBreakdown)
       .map(([task, count]) => `${task} (${count})`)
       .join(', ');
 
-    const totalClasses = (t.mainCount || 0) + (t.supportCount || 0);
-    const totalActive = totalClasses + (t.otherCount || 0);
+    const totalActive = totalTrainings + totalOther;
 
     return [
       idx + 1,
       t.name,
-      t.mainCount || 0,
-      t.supportCount || 0,
-      t.otherCount || 0,
-      taskDetails || '—',
+      `${totalTrainings} slots\n(${t.mainCount || 0} Main, ${t.supportCount || 0} Supp)`,
+      trainingsDetails || '— None',
+      otherDetails || '—',
       totalActive,
       t.totalFree || 0,
     ];
@@ -324,7 +380,7 @@ export function exportAllTrainersPDF(scheduleData) {
   autoTable(doc, {
     startY: 48,
     margin: { left: 14, right: 14 },
-    head: [['#', 'Trainer Name', 'Main Classes', 'Support Classes', 'Assigned Tasks', 'Task Breakdown / Details', 'Total Occupied Slots', 'Free Slots']],
+    head: [['#', 'Trainer Name', 'Total Trainings', 'Trainings (Batches & Sessions)', 'Other Activities', 'Total Load', 'Free Slots']],
     body: summaryRows,
     theme: 'grid',
     headStyles: {
@@ -336,7 +392,7 @@ export function exportAllTrainersPDF(scheduleData) {
     },
     styles: {
       font: 'helvetica',
-      fontSize: 8,
+      fontSize: 7.5,
       cellPadding: 2.2,
       valign: 'middle',
       lineColor: LINE_BORDER,
@@ -344,13 +400,12 @@ export function exportAllTrainersPDF(scheduleData) {
     },
     columnStyles: {
       0: { halign: 'center', cellWidth: 10 },
-      1: { fontStyle: 'bold', cellWidth: 40 },
-      2: { halign: 'center', cellWidth: 24 },
-      3: { halign: 'center', cellWidth: 26 },
-      4: { halign: 'center', cellWidth: 26 },
-      5: { cellWidth: 80 },
-      6: { fontStyle: 'bold', halign: 'center', cellWidth: 32, textColor: BRAND_ORANGE },
-      7: { halign: 'center', cellWidth: 22 },
+      1: { fontStyle: 'bold', cellWidth: 36 },
+      2: { halign: 'center', cellWidth: 32, fontStyle: 'bold', textColor: [184, 56, 14] },
+      3: { cellWidth: 86 },
+      4: { cellWidth: 46 },
+      5: { fontStyle: 'bold', halign: 'center', cellWidth: 26, textColor: BRAND_ORANGE },
+      6: { halign: 'center', cellWidth: 22 },
     },
     alternateRowStyles: {
       fillColor: LIGHT_GREY,
@@ -360,30 +415,51 @@ export function exportAllTrainersPDF(scheduleData) {
   // Individual Timetable Pages for each Trainer
   for (const t of trainers) {
     doc.addPage();
-    addDocHeader(doc, `Timetable: ${t.name}`, `Weekly Timetable & Assigned Tasks — ${t.email || t.phone || 'Mentor'}`);
+    addDocHeader(doc, `Timetable & Workload: ${t.name}`, `Weekly Timetable, Trainings & Assigned Duties — ${t.email || t.phone || 'Mentor'}`);
 
-    const breakdownList = Object.entries(t.activitiesBreakdown || {})
+    const { trainingsBreakdown, activitiesBreakdown, totalTrainings, totalOther } = getTrainerBreakdowns(t, days);
+
+    const trainingsList = Object.entries(trainingsBreakdown)
+      .map(([bName, count]) => `${bName}: ${count} slot(s)`)
+      .join('  •  ');
+
+    const otherList = Object.entries(activitiesBreakdown)
       .map(([task, count]) => `${task}: ${count} slot(s)`)
       .join('  •  ');
 
-    const totalClasses = (t.mainCount || 0) + (t.supportCount || 0);
-    const totalOccupied = totalClasses + (t.otherCount || 0) + (t.lunchCount || 0);
+    const totalOccupied = totalTrainings + totalOther + (t.lunchCount || 0);
+
+    const bodyRows = [
+      [
+        `Total Trainings: ${totalTrainings} slots\n(${t.mainCount || 0} Main, ${t.supportCount || 0} Support)`,
+        `Other Activities: ${totalOther} slots`,
+        `Free Periods: ${t.totalFree || 0} slots`,
+        `Total Active Load: ${totalOccupied} slots`,
+      ],
+    ];
+
+    if (trainingsList) {
+      bodyRows.push([{
+        content: `All Trainings (Batches): ${trainingsList}`,
+        colSpan: 4,
+        styles: { fontStyle: 'bold', textColor: [184, 56, 14], fillColor: [255, 248, 244] },
+      }]);
+    }
+
+    if (otherList) {
+      bodyRows.push([{
+        content: `Other Work Assignments: ${otherList}`,
+        colSpan: 4,
+        styles: { fontStyle: 'italic', textColor: [30, 64, 120], fillColor: [244, 248, 254] },
+      }]);
+    }
 
     autoTable(doc, {
       startY: 48,
       margin: { left: 14, right: 14 },
-      theme: 'plain',
-      styles: { fontSize: 8.5, cellPadding: 2, font: 'helvetica' },
-      body: [
-        [
-          `Main Mentor: ${t.mainCount || 0} slots`,
-          `Support Mentor: ${t.supportCount || 0} slots`,
-          `Assigned Work: ${t.otherCount || 0} slots`,
-          `Free Periods: ${t.totalFree || 0} slots`,
-          `Total Occupied: ${totalOccupied} slots`,
-        ],
-        ...(breakdownList ? [[{ content: `Special Assignments: ${breakdownList}`, colSpan: 5, styles: { fontStyle: 'italic', textColor: MUTED_INK } }]] : []),
-      ],
+      theme: 'grid',
+      styles: { fontSize: 8.5, cellPadding: 2, font: 'helvetica', lineColor: LINE_BORDER },
+      body: bodyRows,
       didParseCell: (dataCell) => {
         if (dataCell.row.index === 0) {
           dataCell.cell.styles.fillColor = ACCENT_BG;

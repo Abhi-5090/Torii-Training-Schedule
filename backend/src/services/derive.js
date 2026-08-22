@@ -207,6 +207,7 @@ export function buildSchedule({ config, groups, trainers, venues, batches, activ
     const free = {};
     let totalFree = 0, mainCount = 0, supportCount = 0, totalBusy = 0, lunchCount = 0, otherCount = 0;
     const activitiesBreakdown = {};
+    const trainingsBreakdown = {};
 
     for (const d of days) {
       free[d] = [];
@@ -217,10 +218,15 @@ export function buildSchedule({ config, groups, trainers, venues, batches, activ
         totalBusy++;
         if (withRoles) {
           const role = withRoles[d][i];
-          if (role === 'support') supportCount++;
-          else if (role === 'main') mainCount++;
-          else if (role === 'lunch') lunchCount++;
-          else if (role === 'other') {
+          if (role === 'support') {
+            supportCount++;
+            if (v) trainingsBreakdown[v] = (trainingsBreakdown[v] || 0) + 1;
+          } else if (role === 'main') {
+            mainCount++;
+            if (v) trainingsBreakdown[v] = (trainingsBreakdown[v] || 0) + 1;
+          } else if (role === 'lunch') {
+            lunchCount++;
+          } else if (role === 'other') {
             otherCount++;
             const label = v || 'Assigned Task';
             activitiesBreakdown[label] = (activitiesBreakdown[label] || 0) + 1;
@@ -228,9 +234,10 @@ export function buildSchedule({ config, groups, trainers, venues, batches, activ
         }
       }
     }
+    const totalTrainings = mainCount + supportCount;
     return {
-      free, totalFree, totalBusy, mainCount, supportCount,
-      lunchCount, otherCount, activitiesBreakdown,
+      free, totalFree, totalBusy, totalTrainings, mainCount, supportCount,
+      trainingsBreakdown, lunchCount, otherCount, activitiesBreakdown,
     };
   };
 
@@ -244,6 +251,8 @@ export function buildSchedule({ config, groups, trainers, venues, batches, activ
       phone: t.phone || '',
       grid, roles,
       free: s.free, totalFree: s.totalFree, totalBusy: s.totalBusy,
+      totalTrainings: s.totalTrainings,
+      trainingsBreakdown: s.trainingsBreakdown,
       mainCount: s.mainCount, supportCount: s.supportCount,
       lunchCount: s.lunchCount, otherCount: s.otherCount,
       activitiesBreakdown: s.activitiesBreakdown,
