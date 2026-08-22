@@ -9,6 +9,7 @@ import authRoutes from './routes/auth.js';
 import adminRoutes from './routes/admin.js';
 import scheduleRoutes from './routes/schedule.js';
 
+const app = express();
 const clientOrigin = process.env.CLIENT_ORIGIN;
 app.use(cors({
   origin: (origin, callback) => {
