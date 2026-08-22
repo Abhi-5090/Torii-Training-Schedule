@@ -46,10 +46,21 @@
   text-transform:uppercase; background:var(--orange-tint); color:var(--orange-deep); border:1px solid var(--orange-soft);
   padding:2px 7px; border-radius:999px; margin-left:8px; vertical-align:1px; white-space:nowrap}
 
-/* ── venue name badge inside occupied timetable cells ── */
+/* ── cell content formatting & abbreviation switches ── */
+.cell .batch-name{font-family:'Space Grotesk',sans-serif; font-weight:700; line-height:1.15; word-break:break-word; max-width:100%}
 .cell .cell-venue{display:block; font-family:'Inter',sans-serif; font-size:9.5px; font-weight:600;
-  opacity:.92; margin-top:2px; line-height:1.15; letter-spacing:-.01em; color:rgba(255,255,255,.94)}
+  opacity:.92; margin-top:2px; line-height:1.15; letter-spacing:-.01em; color:rgba(255,255,255,.94); max-width:100%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
 .cell.support .cell-venue{color:var(--orange-burnt); opacity:.95}
+
+.name-abbr{display:none}
+.name-full{display:inline}
+
+@media(max-width:860px){
+  .cell .name-full{display:none}
+  .cell .name-abbr{display:inline}
+  .cell .batch-name{font-size:10px}
+  .cell .cell-venue{font-size:8px; margin-top:1px}
+}
 
 /* ── task workload count pill on trainer cards ── */
 .count.task{background:var(--surface); color:var(--ink-2); border:1px solid var(--line); box-shadow:var(--shadow-sm)}

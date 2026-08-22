@@ -1,3 +1,5 @@
+import { abbreviateBatch, abbreviateVenue } from '../lib/abbreviate.js';
+
 const DAY_SHORT = {
   Monday: 'MON', Tuesday: 'TUE', Wednesday: 'WED',
   Thursday: 'THU', Friday: 'FRI', Saturday: 'SAT', Sunday: 'SUN',
@@ -47,14 +49,24 @@ function Row({ i, label, entity, days, lunchIndex, onEditCell }) {
 
         /* a real class is never editable here — that lives in Batches & Sessions */
         if (role === 'main' || role === 'support') {
+          const shortBatch = abbreviateBatch(v);
+          const shortVenue = abbreviateVenue(venue);
           return (
             <div
               className={`cell occ ${role === 'support' ? 'support' : ''}`}
               key={d}
-              title={`${v} — ${role === 'support' ? 'Support' : 'Main'} mentor${venue ? ` (${venue})` : ''}`}
+              title={`${v} — ${role === 'support' ? 'Support' : 'Main'} mentor${venue ? ` @ ${venue}` : ''}`}
             >
-              <div className="batch-name">{v}</div>
-              {venue && <div className="cell-venue">{venue}</div>}
+              <div className="batch-name">
+                <span className="name-full">{v}</span>
+                <span className="name-abbr">{shortBatch}</span>
+              </div>
+              {venue && (
+                <div className="cell-venue">
+                  <span className="name-full">{venue}</span>
+                  <span className="name-abbr">{shortVenue}</span>
+                </div>
+              )}
               <span className="rl">{role.toUpperCase()}</span>
             </div>
           );
@@ -75,21 +87,28 @@ function Row({ i, label, entity, days, lunchIndex, onEditCell }) {
             );
         }
         if (role === 'other') {
+          const shortLabel = abbreviateBatch(v);
           return clickable
             ? (
               <button type="button" className="cell occ other editable" key={d} onClick={handleClick} title={`${v} — click to change or clear`}>
-                {v}<span className="rl">ASSIGNED</span>
+                <span className="name-full">{v}</span>
+                <span className="name-abbr">{shortLabel}</span>
+                <span className="rl">ASSIGNED</span>
               </button>
             ) : (
               <div className="cell occ other" key={d} title={v}>
-                {v}<span className="rl">ASSIGNED</span>
+                <span className="name-full">{v}</span>
+                <span className="name-abbr">{shortLabel}</span>
+                <span className="rl">ASSIGNED</span>
               </div>
             );
         }
         if (isClass(v)) {
+          const shortBatch = abbreviateBatch(v);
           return (
             <div className="cell occ" key={d} title={v}>
-              {v}
+              <span className="name-full">{v}</span>
+              <span className="name-abbr">{shortBatch}</span>
             </div>
           );
         }

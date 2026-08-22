@@ -1,5 +1,6 @@
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { abbreviateVenue } from './abbreviate.js';
 
 const BRAND_ORANGE = [241, 93, 35];     // #F15D23
 const DARK_INK = [26, 22, 19];          // #1A1613
@@ -287,9 +288,9 @@ export function exportTrainerPDF(trainer, config) {
       const venue = trainer.venues?.[day]?.[slotIdx] || '';
       
       if (role === 'main') {
-        row.push(`${val}${venue ? `\n@ ${venue}` : ''}\n[MAIN MENTOR]`);
+        row.push(`${val}${venue ? `\n@ ${abbreviateVenue(venue)}` : ''}\n[MAIN MENTOR]`);
       } else if (role === 'support') {
-        row.push(`${val}${venue ? `\n@ ${venue}` : ''}\n[SUPPORT]`);
+        row.push(`${val}${venue ? `\n@ ${abbreviateVenue(venue)}` : ''}\n[SUPPORT]`);
       } else if (role === 'other') {
         row.push(`${val}\n[ASSIGNED]`);
       } else if (role === 'lunch' || (slotIdx === lunchIndex && (!val || val.toLowerCase().includes('lunch')))) {
@@ -493,9 +494,9 @@ export function exportAllTrainersPDF(scheduleData) {
         const venue = t.venues?.[day]?.[slotIdx] || '';
         
         if (role === 'main') {
-          row.push(`${val}${venue ? `\n@ ${venue}` : ''}\n[MAIN MENTOR]`);
+          row.push(`${val}${venue ? `\n@ ${abbreviateVenue(venue)}` : ''}\n[MAIN MENTOR]`);
         } else if (role === 'support') {
-          row.push(`${val}${venue ? `\n@ ${venue}` : ''}\n[SUPPORT]`);
+          row.push(`${val}${venue ? `\n@ ${abbreviateVenue(venue)}` : ''}\n[SUPPORT]`);
         } else if (role === 'other') {
           row.push(`${val}\n[ASSIGNED]`);
         } else if (role === 'lunch' || (slotIdx === lunchIndex && (!val || val.toLowerCase().includes('lunch')))) {
