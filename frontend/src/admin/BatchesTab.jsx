@@ -4,6 +4,8 @@ import { announceChange } from './Console.jsx';
 import { Modal, PageHead, Field, Notice, EmptyState, Spinner, confirmDelete } from './ui.jsx';
 import SessionEditor, { blankSession } from './SessionEditor.jsx';
 
+import { exportBatchesPDF } from '../lib/pdfExport.js';
+
 const emptyBatch = groups => ({
   name: '', group: groups[0]?.name || '', dept: '', count: 0, sessions: [blankSession()],
 });
@@ -14,11 +16,25 @@ export default function BatchesTab() {
   const [trainers, setTrainers] = useState([]);
   const [venues, setVenues] = useState([]);
   const [config, setConfig] = useState(null);
+  const [exporting, setExporting] = useState(false);
 
   const [editing, setEditing] = useState(null);   // the draft being edited, or null
   const [error, setError] = useState('');
   const [ok, setOk] = useState('');
   const [filter, setFilter] = useState('All');
+
+  const handleExportPDF = async () => {
+    setExporting(true); setError('');
+    try {
+      const schedule = await api.schedule();
+      exportBatchesPDF(schedule);
+      flash('Batches schedule PDF downloaded');
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const reload = async () => {
     try {
@@ -73,6 +89,20 @@ export default function BatchesTab() {
         title="Batches & Sessions"
         blurb="This is the source of truth for the whole board. Enter each batch once with its weekly sessions — the trainer timetables and hall occupancy are calculated from what you put here."
       >
+        <button
+          type="button"
+          className="btn-pdf"
+          disabled={exporting || !(batches || []).length}
+          onClick={handleExportPDF}
+          title="Download the full batches and sessions schedule as a PDF"
+        >
+          <svg viewBox="0 0 24 24" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="7 10 12 15 17 10" />
+            <line x1="12" y1="15" x2="12" y2="3" />
+          </svg>
+          {exporting ? 'Generating PDF…' : 'Download Schedule (PDF)'}
+        </button>
         <button
           className="btn btn-primary"
           disabled={!groups.length}

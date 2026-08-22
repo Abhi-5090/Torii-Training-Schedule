@@ -205,7 +205,8 @@ export function buildSchedule({ config, groups, trainers, venues, batches, activ
      sessions legitimately run through 11:50–12:50. */
   const summarise = (grid, withRoles) => {
     const free = {};
-    let totalFree = 0, mainCount = 0, supportCount = 0, totalBusy = 0;
+    let totalFree = 0, mainCount = 0, supportCount = 0, totalBusy = 0, lunchCount = 0, otherCount = 0;
+    const activitiesBreakdown = {};
 
     for (const d of days) {
       free[d] = [];
@@ -218,11 +219,19 @@ export function buildSchedule({ config, groups, trainers, venues, batches, activ
           const role = withRoles[d][i];
           if (role === 'support') supportCount++;
           else if (role === 'main') mainCount++;
-          /* 'lunch' / 'other' still count toward totalBusy above, just not as a class */
+          else if (role === 'lunch') lunchCount++;
+          else if (role === 'other') {
+            otherCount++;
+            const label = v || 'Assigned Task';
+            activitiesBreakdown[label] = (activitiesBreakdown[label] || 0) + 1;
+          }
         }
       }
     }
-    return { free, totalFree, totalBusy, mainCount, supportCount };
+    return {
+      free, totalFree, totalBusy, mainCount, supportCount,
+      lunchCount, otherCount, activitiesBreakdown,
+    };
   };
 
   const trainerViews = trainers.map(t => {
@@ -230,9 +239,14 @@ export function buildSchedule({ config, groups, trainers, venues, batches, activ
     const s = summarise(grid, roles);
     return {
       id: String(t._id || t.id || t.name),
-      name: t.name, grid, roles,
-      free: s.free, totalFree: s.totalFree,
+      name: t.name,
+      email: t.email || '',
+      phone: t.phone || '',
+      grid, roles,
+      free: s.free, totalFree: s.totalFree, totalBusy: s.totalBusy,
       mainCount: s.mainCount, supportCount: s.supportCount,
+      lunchCount: s.lunchCount, otherCount: s.otherCount,
+      activitiesBreakdown: s.activitiesBreakdown,
     };
   });
 

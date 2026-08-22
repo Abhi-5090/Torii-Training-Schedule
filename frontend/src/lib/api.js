@@ -48,8 +48,24 @@ export const api = {
   remove: (kind, id) => call(`/admin/${kind}/${id}`, { method: 'DELETE' }),
 
   /* what a trainer is doing during a period that isn't a class */
-  setActivity: (trainer, day, slot, kind, label) =>
-    call('/admin/activities', { method: 'PUT', body: { trainer, day, slot, kind, label } }),
-  clearActivity: (trainer, day, slot) =>
-    call(`/admin/activities?trainer=${encodeURIComponent(trainer)}&day=${encodeURIComponent(day)}&slot=${slot}`, { method: 'DELETE' }),
+  setActivity: (payload, day, slot, kind, label) => {
+    // support both legacy setActivity(trainer, day, slot, kind, label) and setActivity({ trainer, day, slots, kind, label })
+    const body = typeof payload === 'object' && payload !== null && payload.trainer
+      ? payload
+      : { trainer: payload, day, slot, kind, label };
+    return call('/admin/activities', { method: 'PUT', body });
+  },
+  clearActivity: (payload, day, slot) => {
+    if (typeof payload === 'object' && payload !== null && payload.trainer) {
+      const q = [`trainer=${encodeURIComponent(payload.trainer)}`];
+      if (payload.day) q.push(`day=${encodeURIComponent(payload.day)}`);
+      if (Array.isArray(payload.slots) && payload.slots.length) q.push(`slots=${payload.slots.join(',')}`);
+      else if (payload.slot !== undefined) q.push(`slot=${payload.slot}`);
+      return call(`/admin/activities?${q.join('&')}`, { method: 'DELETE' });
+    }
+    const q = [`trainer=${encodeURIComponent(payload)}`];
+    if (day) q.push(`day=${encodeURIComponent(day)}`);
+    if (slot !== undefined) q.push(`slot=${slot}`);
+    return call(`/admin/activities?${q.join('&')}`, { method: 'DELETE' });
+  },
 };

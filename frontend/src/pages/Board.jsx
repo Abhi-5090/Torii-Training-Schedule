@@ -329,6 +329,9 @@ function TrainerView({ data, query, admin, refresh }) {
           day={editing.day}
           slot={editing.slot}
           slotLabel={data.slots[editing.slot]}
+          days={data.days}
+          slots={data.slots}
+          lunchIndex={data.lunchIndex}
           current={editing.current}
           onClose={() => setEditing(null)}
           onSaved={refresh}

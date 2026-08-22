@@ -391,35 +391,68 @@ router.get('/availability', wrap(async (req, res) => {
 
 router.put('/activities', wrap(async (req, res) => {
   const trainer = str(req.body?.trainer);
-  const day = str(req.body?.day);
-  const slot = Number(req.body?.slot);
+  const rawDays = Array.isArray(req.body?.days)
+    ? req.body.days
+    : (req.body?.day !== undefined ? [req.body.day] : []);
+  const days = [...new Set(rawDays.map(str).filter(Boolean))];
+
+  const rawSlots = Array.isArray(req.body?.slots)
+    ? req.body.slots
+    : (req.body?.slot !== undefined ? [req.body.slot] : []);
+  const slots = [...new Set(rawSlots.map(Number))].filter(Number.isInteger);
+
   const kind = str(req.body?.kind);
   const label = str(req.body?.label);
 
   if (!await Trainer.findOne({ name: trainer })) return fail(res, 400, 'Unknown trainer');
 
   const config = await Config.findOne({ key: 'default' }).lean();
-  if (!config.days.includes(day)) return fail(res, 400, `"${day}" is not a teaching day`);
-  if (!Number.isInteger(slot) || slot < 0 || slot >= config.slots.length) {
-    return fail(res, 400, 'Not a valid period');
+  if (!days.length || days.some(d => !config.days.includes(d))) {
+    return fail(res, 400, 'Pick valid teaching day(s)');
+  }
+  if (!slots.length || slots.some(s => s < 0 || s >= config.slots.length)) {
+    return fail(res, 400, 'Pick valid period(s)');
   }
   if (!['lunch', 'other'].includes(kind)) return fail(res, 400, 'Kind must be "lunch" or "other"');
   if (kind === 'other' && !label) return fail(res, 400, 'Say what they\'re doing');
 
-  const doc = await Activity.findOneAndUpdate(
-    { trainer, day, slot },
-    { trainer, day, slot, kind, label: kind === 'lunch' ? '' : label },
-    { upsert: true, new: true },
-  );
-  res.json(doc);
+  const docs = [];
+  for (const day of days) {
+    for (const slot of slots) {
+      const doc = await Activity.findOneAndUpdate(
+        { trainer, day, slot },
+        { trainer, day, slot, kind, label: kind === 'lunch' ? '' : label },
+        { upsert: true, new: true },
+      );
+      docs.push(doc);
+    }
+  }
+  res.json({ ok: true, count: docs.length, docs });
 }));
 
 router.delete('/activities', wrap(async (req, res) => {
-  const trainer = str(req.query.trainer);
-  const day = str(req.query.day);
-  const slot = Number(req.query.slot);
-  await Activity.deleteOne({ trainer, day, slot });
-  res.json({ ok: true });
+  const trainer = str(req.query.trainer || req.body?.trainer);
+  const day = str(req.query.day || req.body?.day);
+
+  let rawSlots = [];
+  if (req.query.slots !== undefined) {
+    rawSlots = String(req.query.slots).split(',').map(Number);
+  } else if (req.query.slot !== undefined) {
+    rawSlots = [Number(req.query.slot)];
+  } else if (Array.isArray(req.body?.slots)) {
+    rawSlots = req.body.slots.map(Number);
+  } else if (req.body?.slot !== undefined) {
+    rawSlots = [Number(req.body.slot)];
+  }
+
+  const slots = rawSlots.filter(Number.isInteger);
+
+  const filter = { trainer };
+  if (day) filter.day = day;
+  if (slots.length) filter.slot = { $in: slots };
+
+  const result = await Activity.deleteMany(filter);
+  res.json({ ok: true, deletedCount: result.deletedCount });
 }));
 
 export default router;

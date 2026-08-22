@@ -46,6 +46,17 @@
   text-transform:uppercase; background:var(--orange-tint); color:var(--orange-deep); border:1px solid var(--orange-soft);
   padding:2px 7px; border-radius:999px; margin-left:8px; vertical-align:1px; white-space:nowrap}
 
+/* ── task workload count pill on trainer cards ── */
+.count.task{background:var(--surface); color:var(--ink-2); border:1px solid var(--line); box-shadow:var(--shadow-sm)}
+.count.task small{color:var(--orange-deep)}
+
+/* ── PDF export button styling ── */
+.btn-pdf{display:inline-flex; align-items:center; gap:7px; background:var(--card); color:var(--ink-2);
+  border:1px solid var(--line); border-radius:12px; padding:9px 15px; font-family:'Space Grotesk',sans-serif;
+  font-weight:700; font-size:13px; cursor:pointer; transition:.15s}
+.btn-pdf:hover{border-color:var(--orange); color:var(--orange); background:var(--orange-tint); transform:translateY(-1px)}
+.btn-pdf svg{width:16px; height:16px; stroke:currentColor}
+
 /* ── hero: Admin sits beside the theme toggle, so the pair share a rail
       instead of the toggle being absolutely placed on its own ── */
 .hero-actions{position:absolute; top:clamp(20px,2.4vw,30px); right:clamp(20px,2.4vw,34px); z-index:5;

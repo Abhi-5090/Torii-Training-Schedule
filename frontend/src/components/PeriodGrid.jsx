@@ -104,10 +104,21 @@ function Row({ i, label, entity, days, lunchIndex, onEditCell }) {
 }
 
 export function Counts({ entity }) {
+  const breakdownEntries = Object.entries(entity.activitiesBreakdown || {});
+
   const split = entity.mainCount !== undefined ? (
     <>
-      <div className="count occ"><span className="big">{entity.mainCount}</span><small>Main</small></div>
-      <div className="count supp"><span className="big">{entity.supportCount}</span><small>Support</small></div>
+      <div className="count occ" title="Main mentor teaching periods">
+        <span className="big">{entity.mainCount}</span><small>Main</small>
+      </div>
+      <div className="count supp" title="Support mentor teaching periods">
+        <span className="big">{entity.supportCount}</span><small>Support</small>
+      </div>
+      {breakdownEntries.map(([name, cnt]) => (
+        <div className="count task" key={name} title={`${name}: ${cnt} period(s)`}>
+          <span className="big">{cnt}</span><small>{name}</small>
+        </div>
+      ))}
     </>
   ) : (
     <div className="count occ"><span className="big">{entity.totalBusy}</span><small>Occupied</small></div>
@@ -115,7 +126,9 @@ export function Counts({ entity }) {
 
   return (
     <div className="counts">
-      <div className="count free"><span className="big">{entity.totalFree}</span><small>Free</small></div>
+      <div className="count free" title="Free unassigned periods">
+        <span className="big">{entity.totalFree}</span><small>Free</small>
+      </div>
       {split}
     </div>
   );
