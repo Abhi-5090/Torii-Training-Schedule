@@ -55,32 +55,47 @@ export default function ActivityModal({ trainerName, day, slot, slotLabel, curre
     >
       {error && <div className="form-error">{error}</div>}
 
-      <p className="sub" style={{ marginTop: -6 }}>What are they doing during this period?</p>
+      <p className="sub" style={{ marginTop: -6 }}>
+        Assign an activity or custom lunch break for <b>{trainerName}</b> during this slot.
+      </p>
 
       <div className="activity-picks">
         <button
-          type="button" className={kind === 'lunch' ? 'on lunch' : ''}
+          type="button"
+          className={kind === 'lunch' ? 'on lunch' : ''}
           onClick={() => setKind('lunch')}
         >
           Lunch
         </button>
         <button
-          type="button" className={kind === 'other' ? 'on' : ''}
+          type="button"
+          className={kind === 'other' ? 'on' : ''}
           onClick={() => setKind('other')}
         >
           Other
         </button>
       </div>
 
+      {kind === 'lunch' && (
+        <p className="help" style={{ marginTop: -8, marginBottom: 14 }}>
+          This period will be marked as <b>Lunch</b> for this trainer.
+        </p>
+      )}
+
       {kind === 'other' && (
         <div className="field">
-          <label>What is it?</label>
-          <input
-            autoFocus value={label}
-            placeholder="e.g. Designing work, social media handling, requirements gathering…"
+          <label>Work assignment / Description</label>
+          <textarea
+            autoFocus
+            rows={3}
+            value={label}
+            placeholder="e.g. Designing work, social media handling, requirements gathering, curriculum review…"
             onChange={e => setLabel(e.target.value)}
-            onKeyDown={e => { if (e.key === 'Enter') save(); }}
+            onKeyDown={e => {
+              if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') save();
+            }}
           />
+          <div className="help">Press ⌘+Enter (Ctrl+Enter) or click Save.</div>
         </div>
       )}
     </Modal>

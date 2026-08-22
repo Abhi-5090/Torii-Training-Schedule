@@ -62,18 +62,26 @@ function Row({ i, label, entity, days, lunchIndex, onEditCell }) {
         const handleClick = clickable ? () => onEditCell(d, i, current) : undefined;
 
         if (role === 'lunch') {
-          return (
-            <button type="button" className="cell lunch editable" key={d} onClick={handleClick} title="Logged lunch — click to change">
-              {v}
-            </button>
-          );
+          return clickable
+            ? (
+              <button type="button" className="cell lunch editable" key={d} onClick={handleClick} title="Logged lunch — click to change or clear">
+                {v}
+              </button>
+            ) : (
+              <div className="cell lunch" key={d}>{v}</div>
+            );
         }
         if (role === 'other') {
-          return (
-            <button type="button" className="cell occ other editable" key={d} onClick={handleClick} title={`${v} — click to change`}>
-              {v}<span className="rl">LOGGED</span>
-            </button>
-          );
+          return clickable
+            ? (
+              <button type="button" className="cell occ other editable" key={d} onClick={handleClick} title={`${v} — click to change or clear`}>
+                {v}<span className="rl">ASSIGNED</span>
+              </button>
+            ) : (
+              <div className="cell occ other" key={d} title={v}>
+                {v}<span className="rl">ASSIGNED</span>
+              </div>
+            );
         }
         if (isClass(v)) {
           return (
@@ -84,11 +92,11 @@ function Row({ i, label, entity, days, lunchIndex, onEditCell }) {
         }
         if (isGlobalLunch) {
           return clickable
-            ? <button type="button" className="cell lunch editable" key={d} onClick={handleClick} title="Click to log something other than the standard break">Lunch</button>
+            ? <button type="button" className="cell lunch editable" key={d} onClick={handleClick} title="Click to assign lunch or other work">Lunch</button>
             : <div className="cell lunch" key={d}>Lunch</div>;
         }
         return clickable
-          ? <button type="button" className="cell free editable" key={d} onClick={handleClick} title="Click to log what they're doing">Free</button>
+          ? <button type="button" className="cell free editable" key={d} onClick={handleClick} title="Click to assign lunch or other work">Free</button>
           : <div className="cell free" key={d}>Free</div>;
       })}
     </>
