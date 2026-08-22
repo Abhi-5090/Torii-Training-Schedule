@@ -12,7 +12,12 @@ async function call(path, { method = 'GET', body } = {}) {
   });
 
   const text = await res.text();
-  const data = text ? JSON.parse(text) : null;
+  let data = null;
+  try {
+    data = text ? JSON.parse(text) : null;
+  } catch {
+    data = { error: text?.slice(0, 150) || `Server returned ${res.status}` };
+  }
 
   if (!res.ok) {
     const err = new Error(data?.error || `Request failed (${res.status})`);
