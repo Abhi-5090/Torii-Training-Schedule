@@ -5,6 +5,7 @@ import YearGroup from '../models/YearGroup.js';
 import Trainer from '../models/Trainer.js';
 import Venue from '../models/Venue.js';
 import Batch from '../models/Batch.js';
+import Activity from '../models/Activity.js';
 import { requireAdmin } from '../middleware/auth.js';
 import { wrap } from '../middleware/asyncRoute.js';
 
@@ -124,13 +125,15 @@ router.put('/trainers/:id', wrap(async (req, res) => {
   const name = str(req.body?.name) || trainer.name;
   if (name !== trainer.name) {
     if (await Trainer.findOne({ name })) return fail(res, 409, `${name} is already on the list`);
-    /* sessions hold trainer names, so a rename has to reach into them */
+    /* sessions and logged activities both hold trainer names, so a rename
+       has to reach into both */
     await Batch.updateMany({ 'sessions.mainTrainers': trainer.name },
       { $set: { 'sessions.$[s].mainTrainers.$[t]': name } },
       { arrayFilters: [{ 's.mainTrainers': trainer.name }, { t: trainer.name }] });
     await Batch.updateMany({ 'sessions.supportTrainers': trainer.name },
       { $set: { 'sessions.$[s].supportTrainers.$[t]': name } },
       { arrayFilters: [{ 's.supportTrainers': trainer.name }, { t: trainer.name }] });
+    await Activity.updateMany({ trainer: trainer.name }, { trainer: name });
   }
 
   trainer.name = name;
@@ -150,6 +153,7 @@ router.delete('/trainers/:id', wrap(async (req, res) => {
   const pulled = await Batch.updateMany({}, {
     $pull: { 'sessions.$[].mainTrainers': trainer.name, 'sessions.$[].supportTrainers': trainer.name },
   });
+  await Activity.deleteMany({ trainer: trainer.name });
   await trainer.deleteOne();
   res.json({ ok: true, sessionsTouched: pulled.modifiedCount });
 }));
@@ -376,6 +380,45 @@ router.get('/availability', wrap(async (req, res) => {
   });
 
   res.json({ when, trainers: shape(trainers, trainerHits), venues: shape(venues, venueHits) });
+}));
+
+/* ───────────────────────── trainer activities ─────────────────────────
+   What a trainer is doing during a period that isn't a class — logged
+   straight from the timetable cell rather than a separate form. A real
+   batch session at that slot always wins when the board is built, so this
+   can never mask one. */
+
+router.put('/activities', wrap(async (req, res) => {
+  const trainer = str(req.body?.trainer);
+  const day = str(req.body?.day);
+  const slot = Number(req.body?.slot);
+  const kind = str(req.body?.kind);
+  const label = str(req.body?.label);
+
+  if (!await Trainer.findOne({ name: trainer })) return fail(res, 400, 'Unknown trainer');
+
+  const config = await Config.findOne({ key: 'default' }).lean();
+  if (!config.days.includes(day)) return fail(res, 400, `"${day}" is not a teaching day`);
+  if (!Number.isInteger(slot) || slot < 0 || slot >= config.slots.length) {
+    return fail(res, 400, 'Not a valid period');
+  }
+  if (!['lunch', 'other'].includes(kind)) return fail(res, 400, 'Kind must be "lunch" or "other"');
+  if (kind === 'other' && !label) return fail(res, 400, 'Say what they\'re doing');
+
+  const doc = await Activity.findOneAndUpdate(
+    { trainer, day, slot },
+    { trainer, day, slot, kind, label: kind === 'lunch' ? '' : label },
+    { upsert: true, new: true },
+  );
+  res.json(doc);
+}));
+
+router.delete('/activities', wrap(async (req, res) => {
+  const trainer = str(req.query.trainer);
+  const day = str(req.query.day);
+  const slot = Number(req.query.slot);
+  await Activity.deleteOne({ trainer, day, slot });
+  res.json({ ok: true });
 }));
 
 export default router;

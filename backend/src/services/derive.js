@@ -96,7 +96,7 @@ function collapseRows(sessions, config) {
  * Builds the whole payload the board consumes.
  * `config` is { slots, days, lunchIndex }.
  */
-export function buildSchedule({ config, groups, trainers, venues, batches }) {
+export function buildSchedule({ config, groups, trainers, venues, batches, activities = [] }) {
   const { slots, days, lunchIndex } = config;
   const slotCount = slots.length;
 
@@ -183,6 +183,18 @@ export function buildSchedule({ config, groups, trainers, venues, batches }) {
     }
   }
 
+  /* A logged activity (lunch taken outside the standard break, or anything
+     else — design work, social media, requirements gathering) fills in a
+     trainer's own free time. A real class always wins: this only touches a
+     cell that no session has already claimed, so a note can never mask one. */
+  for (const a of activities) {
+    if (!days.includes(a.day) || a.slot < 0 || a.slot >= slotCount) continue;
+    ensureTrainer(a.trainer);
+    if (tGrid[a.trainer][a.day][a.slot]) continue;              // a class already owns it
+    tGrid[a.trainer][a.day][a.slot] = a.kind === 'lunch' ? 'Lunch' : (a.label || 'Other');
+    tRole[a.trainer][a.day][a.slot] = a.kind;                    // 'lunch' | 'other'
+  }
+
   /* Lunch is a break for everyone, so it is neither free nor occupied. It is
      stamped in only where no class was booked over it — First Year's slot 3–4
      sessions legitimately run through 11:50–12:50. */
@@ -198,8 +210,10 @@ export function buildSchedule({ config, groups, trainers, venues, batches }) {
         if (!v) { free[d].push(slots[i]); totalFree++; continue; }
         totalBusy++;
         if (withRoles) {
-          if (withRoles[d][i] === 'support') supportCount++;
-          else mainCount++;
+          const role = withRoles[d][i];
+          if (role === 'support') supportCount++;
+          else if (role === 'main') mainCount++;
+          /* 'lunch' / 'other' still count toward totalBusy above, just not as a class */
         }
       }
     }

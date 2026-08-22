@@ -14,6 +14,33 @@
 .srow .who .v{color:var(--ink-2); font-weight:600}
 .srow .who .lbl.v{background:var(--line-2); color:var(--ink-2); border:1px solid var(--line)}
 
+/* ── period-grid cells become buttons for a signed-in admin, so they need
+   their own reset before the .cell/.occ/.free/.lunch rules from torii.css
+   can style them the same as the plain divs everyone else sees ── */
+.cell.editable{appearance:none; -webkit-appearance:none; border:none; margin:0; width:100%;
+  font-family:inherit; cursor:pointer}
+.cell.editable:focus-visible{outline:2px solid var(--orange); outline-offset:2px}
+.cell.free.editable:hover{background:var(--orange-tint); border-color:var(--orange)}
+.cell.lunch.editable:hover{background:var(--lunch-bg2)}
+.cell.occ.other.editable:hover{box-shadow:0 8px 16px -8px rgba(241,93,35,.9)}
+/* a tiny corner mark so an editable cell reads as clickable before the hover */
+.cell.editable{position:relative}
+.cell.editable::after{content:""; position:absolute; top:3px; right:3px; width:5px; height:5px;
+  border-radius:50%; background:currentColor; opacity:.35}
+.cell.free.editable::after{background:var(--orange)}
+
+.admin-hint{display:flex; align-items:center; gap:9px; font-size:12.5px; font-weight:600; color:var(--orange-deep);
+  background:var(--orange-tint); border:1px solid var(--orange-soft); border-radius:12px; padding:10px 16px; margin:0 0 18px}
+
+/* ── activity modal: quick-pick between Lunch and a free-text note ── */
+.activity-picks{display:flex; gap:10px; margin-bottom:16px}
+.activity-picks button{flex:1; padding:14px 12px; border-radius:12px; border:1.5px solid var(--line);
+  background:var(--card); cursor:pointer; font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:13.5px;
+  color:var(--ink-2); transition:.16s}
+.activity-picks button:hover{border-color:var(--orange); color:var(--orange)}
+.activity-picks button.on{border-color:var(--orange); background:var(--orange-tint); color:var(--orange-deep)}
+.activity-picks button.on.lunch{border-color:var(--lunch-bg); background:var(--lunch-bg); color:var(--lunch-tx)}
+
 /* ── slot-number badge on a batch card ── */
 .srow .time .slot{font-family:'JetBrains Mono',monospace; font-size:9.5px; font-weight:600; letter-spacing:.08em;
   text-transform:uppercase; background:var(--orange-tint); color:var(--orange-deep); border:1px solid var(--orange-soft);

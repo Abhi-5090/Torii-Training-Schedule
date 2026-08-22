@@ -9,6 +9,7 @@ import Loading from '../components/Loading.jsx';
 import BatchCard from '../components/BatchCard.jsx';
 import SoonCard from '../components/SoonCard.jsx';
 import PeriodGrid, { Counts, freeAllDay, dayShort } from '../components/PeriodGrid.jsx';
+import ActivityModal from '../components/ActivityModal.jsx';
 import { CalendarIcon, PersonIcon, BuildingIcon, SearchIcon } from '../components/Icons.jsx';
 
 /* loading dwell, ms — the same beats the original board used */
@@ -44,9 +45,8 @@ export default function Board({ admin }) {
   const [dwell, setDwell] = useState(true);
   const [dwellMsg, setDwellMsg] = useState(VIEWS.schedule.msg);
 
-  useEffect(() => {
-    api.schedule().then(setData).catch(e => setError(e.message));
-  }, []);
+  const refresh = () => api.schedule().then(setData);
+  useEffect(() => { refresh().catch(e => setError(e.message)); }, []);
 
   useEffect(() => { document.body.classList.add('boot'); }, []);
 
@@ -158,7 +158,7 @@ export default function Board({ admin }) {
             </span>
           </div>
           {busy ? <Loading msg={dwellMsg} n={2} />
-                : <TrainerView data={data} query={query} />}
+                : <TrainerView data={data} query={query} admin={admin} refresh={refresh} />}
         </section>
       )}
 
@@ -277,13 +277,16 @@ const VENUE_LEGEND = (
 
 const initials = n => n.slice(0, 2).toUpperCase();
 
-function TrainerView({ data, query }) {
+function TrainerView({ data, query, admin, refresh }) {
   const host = useRef(null);
   const q = query.trim().toLowerCase();
   const list = useMemo(
     () => data.trainers.filter(t => t.name.toLowerCase().includes(q)),
     [data, q],
   );
+
+  /* the cell currently open in the activity editor, or null */
+  const [editing, setEditing] = useState(null);
 
   useEffect(() => reveal(host.current), [list]);
 
@@ -292,6 +295,11 @@ function TrainerView({ data, query }) {
   return (
     <div ref={host}>
       {LEGEND}
+      {admin && (
+        <p className="admin-hint">
+          Signed in — click any free, lunch, or logged period on a grid below to record what that trainer is doing.
+        </p>
+      )}
       {list.map(t => {
         const free = freeAllDay(t, data.days, data.slots.length);
         const role = t.mainCount && t.supportCount ? 'Main + Support mentor'
@@ -306,11 +314,26 @@ function TrainerView({ data, query }) {
               </div>
               <Counts entity={t} />
             </div>
-            <PeriodGrid entity={t} slots={data.slots} days={data.days} lunchIndex={data.lunchIndex} />
+            <PeriodGrid
+              entity={t} slots={data.slots} days={data.days} lunchIndex={data.lunchIndex}
+              onEditCell={admin ? (day, slot, current) => setEditing({ trainerName: t.name, day, slot, current }) : undefined}
+            />
             {!!free.length && <p className="free-note">● Free all day: {free.join(', ')}</p>}
           </article>
         );
       })}
+
+      {editing && (
+        <ActivityModal
+          trainerName={editing.trainerName}
+          day={editing.day}
+          slot={editing.slot}
+          slotLabel={data.slots[editing.slot]}
+          current={editing.current}
+          onClose={() => setEditing(null)}
+          onSaved={refresh}
+        />
+      )}
     </div>
   );
 }

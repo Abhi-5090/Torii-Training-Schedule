@@ -13,8 +13,14 @@ const isClass = v => !!v && !/^lunch\b/i.test(v.trim());
 /*
  * The 8 × 5 timetable shown on every trainer and hall card. `entity` is one
  * of the derived trainer/venue views: { grid, roles? }.
+ *
+ * `onEditCell(day, slotIndex, current)` — pass it to make non-class cells on
+ * a trainer's own grid clickable (signed-in admins only; the caller decides
+ * that, this component just renders what it's given). `current` is null for
+ * a free/plain-lunch cell, or `{ kind, label }` for an existing logged note.
+ * A cell already held by a real class (role 'main'/'support') never calls it.
  */
-export default function PeriodGrid({ entity, slots, days, lunchIndex }) {
+export default function PeriodGrid({ entity, slots, days, lunchIndex, onEditCell }) {
   return (
     <div className="tt-scroll">
       <div className="ttgrid" style={{ '--daycols': days.length }}>
@@ -22,35 +28,61 @@ export default function PeriodGrid({ entity, slots, days, lunchIndex }) {
         {days.map(d => <div className="tt-dh" key={d}>{dayShort(d)}</div>)}
 
         {slots.map((label, i) => (
-          <Row key={i} i={i} label={label} entity={entity} days={days} lunchIndex={lunchIndex} />
+          <Row key={i} i={i} label={label} entity={entity} days={days} lunchIndex={lunchIndex} onEditCell={onEditCell} />
         ))}
       </div>
     </div>
   );
 }
 
-function Row({ i, label, entity, days, lunchIndex }) {
+function Row({ i, label, entity, days, lunchIndex, onEditCell }) {
   return (
     <>
       <div className="tt-time">{label}</div>
       {days.map(d => {
         const v = entity.grid[d]?.[i] || '';
         const role = entity.roles ? entity.roles[d]?.[i] || '' : '';
+        const isGlobalLunch = i === lunchIndex && !isClass(v);
 
-        if (i === lunchIndex && !isClass(v)) return <div className="cell lunch" key={d}>Lunch</div>;
-        if (!v) return <div className="cell free" key={d}>Free</div>;
-        if (role === 'support') {
+        /* a real class is never editable here — that lives in Batches & Sessions */
+        if (role === 'main' || role === 'support') {
           return (
-            <div className="cell occ support" key={d} title={`${v} — Support mentor`}>
-              {v}<span className="rl">SUPPORT</span>
+            <div
+              className={`cell occ ${role === 'support' ? 'support' : ''}`}
+              key={d}
+              title={`${v} — ${role === 'support' ? 'Support' : 'Main'} mentor`}
+            >
+              {v}<span className="rl">{role.toUpperCase()}</span>
             </div>
           );
         }
-        return (
-          <div className="cell occ" key={d} title={role ? `${v} — Main mentor` : v}>
-            {v}{role && <span className="rl">MAIN</span>}
-          </div>
-        );
+
+        const clickable = !!onEditCell;
+        const current = role === 'lunch' || role === 'other' ? { kind: role, label: v } : null;
+        const handleClick = clickable ? () => onEditCell(d, i, current) : undefined;
+
+        if (role === 'lunch') {
+          return (
+            <button type="button" className="cell lunch editable" key={d} onClick={handleClick} title="Logged lunch — click to change">
+              {v}
+            </button>
+          );
+        }
+        if (role === 'other') {
+          return (
+            <button type="button" className="cell occ other editable" key={d} onClick={handleClick} title={`${v} — click to change`}>
+              {v}<span className="rl">LOGGED</span>
+            </button>
+          );
+        }
+        if (isGlobalLunch) {
+          return clickable
+            ? <button type="button" className="cell lunch editable" key={d} onClick={handleClick} title="Click to log something other than the standard break">Lunch</button>
+            : <div className="cell lunch" key={d}>Lunch</div>;
+        }
+        return clickable
+          ? <button type="button" className="cell free editable" key={d} onClick={handleClick} title="Click to log what they're doing">Free</button>
+          : <div className="cell free" key={d}>Free</div>;
       })}
     </>
   );

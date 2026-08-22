@@ -46,4 +46,10 @@ export const api = {
   create: (kind, body) => call(`/admin/${kind}`, { method: 'POST', body }),
   update: (kind, id, body) => call(`/admin/${kind}/${id}`, { method: 'PUT', body }),
   remove: (kind, id) => call(`/admin/${kind}/${id}`, { method: 'DELETE' }),
+
+  /* what a trainer is doing during a period that isn't a class */
+  setActivity: (trainer, day, slot, kind, label) =>
+    call('/admin/activities', { method: 'PUT', body: { trainer, day, slot, kind, label } }),
+  clearActivity: (trainer, day, slot) =>
+    call(`/admin/activities?trainer=${encodeURIComponent(trainer)}&day=${encodeURIComponent(day)}&slot=${slot}`, { method: 'DELETE' }),
 };
