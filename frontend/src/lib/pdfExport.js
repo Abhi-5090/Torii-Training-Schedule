@@ -68,7 +68,7 @@ function addDocFooter(doc) {
 
 // Helper to extract detailed trainings and activities breakdowns with venue details
 function getTrainerBreakdowns(trainer, days = []) {
-  const trainingsBreakdown = {};
+  const trainingsMap = {};
   const activitiesBreakdown = {};
 
   if (trainer.grid && trainer.roles) {
@@ -83,8 +83,19 @@ function getTrainerBreakdowns(trainer, days = []) {
         const venue = vRow[i] || '';
 
         if ((role === 'main' || role === 'support') && val) {
-          const key = venue ? `${val} [${venue}]` : val;
-          trainingsBreakdown[key] = (trainingsBreakdown[key] || 0) + 1;
+          const key = venue ? `${val}__${venue}` : val;
+          if (!trainingsMap[key]) {
+            trainingsMap[key] = {
+              batchName: val,
+              venue: venue || '',
+              slots: 0,
+              mainSlots: 0,
+              supportSlots: 0,
+            };
+          }
+          trainingsMap[key].slots++;
+          if (role === 'main') trainingsMap[key].mainSlots++;
+          if (role === 'support') trainingsMap[key].supportSlots++;
         } else if (role === 'other' && val) {
           activitiesBreakdown[val] = (activitiesBreakdown[val] || 0) + 1;
         }
@@ -93,18 +104,27 @@ function getTrainerBreakdowns(trainer, days = []) {
   }
 
   // Fallback to pre-calculated breakdowns if grid was empty
-  if (!Object.keys(trainingsBreakdown).length && trainer.trainingsBreakdown) {
-    Object.assign(trainingsBreakdown, trainer.trainingsBreakdown);
+  if (!Object.keys(trainingsMap).length && trainer.trainingsBreakdown) {
+    for (const [key, count] of Object.entries(trainer.trainingsBreakdown)) {
+      trainingsMap[key] = {
+        batchName: key,
+        venue: '',
+        slots: count,
+        mainSlots: count,
+        supportSlots: 0,
+      };
+    }
   }
   if (!Object.keys(activitiesBreakdown).length && trainer.activitiesBreakdown) {
     Object.assign(activitiesBreakdown, trainer.activitiesBreakdown);
   }
 
+  const trainingsList = Object.values(trainingsMap);
   const totalTrainings = (trainer.mainCount || 0) + (trainer.supportCount || 0);
   const totalOther = trainer.otherCount || Object.values(activitiesBreakdown).reduce((s, n) => s + n, 0);
 
   return {
-    trainingsBreakdown,
+    trainingsList,
     activitiesBreakdown,
     totalTrainings,
     totalOther,
@@ -225,15 +245,7 @@ export function exportTrainerPDF(trainer, config) {
 
   addDocHeader(doc, `Trainer Timetable & Workload: ${trainer.name}`, 'Individual Mentor Weekly Schedule & Venue Deployment');
 
-  const { trainingsBreakdown, activitiesBreakdown, totalTrainings, totalOther } = getTrainerBreakdowns(trainer, days);
-
-  const trainingsList = Object.entries(trainingsBreakdown)
-    .map(([tName, count]) => `${tName}: ${count} slot(s)`)
-    .join('  •  ');
-
-  const otherList = Object.entries(activitiesBreakdown)
-    .map(([task, count]) => `${task}: ${count} slot(s)`)
-    .join('  •  ');
+  const { trainingsList, activitiesBreakdown, totalTrainings, totalOther } = getTrainerBreakdowns(trainer, days);
 
   const totalOccupied = totalTrainings + totalOther + (trainer.lunchCount || 0);
 
@@ -246,19 +258,32 @@ export function exportTrainerPDF(trainer, config) {
     ],
   ];
 
-  if (trainingsList) {
+  if (trainingsList.length > 0) {
+    const bulletList = trainingsList.map(t => {
+      const roleStr = t.mainSlots && t.supportSlots
+        ? `(${t.mainSlots} Main, ${t.supportSlots} Support)`
+        : (t.supportSlots ? '(Support Mentor)' : '(Main Mentor)');
+      const vStr = t.venue ? ` | Venue: ${t.venue}` : '';
+      return `•  ${t.batchName}${vStr}  —  ${t.slots} Slot(s)  ${roleStr}`;
+    }).join('\n');
+
     bodyRows.push([{
-      content: `All Assigned Trainings & Venues:\n${trainingsList}`,
+      content: `ASSIGNED ACADEMIC TRAININGS & VENUES:\n${bulletList}`,
       colSpan: 4,
-      styles: { fontStyle: 'bold', textColor: [184, 56, 14], fillColor: [255, 248, 244] },
+      styles: { fontStyle: 'bold', textColor: [184, 56, 14], fillColor: [255, 248, 244], cellPadding: 3, lineHeightFactor: 1.35 },
     }]);
   }
 
-  if (otherList) {
+  const otherEntries = Object.entries(activitiesBreakdown);
+  if (otherEntries.length > 0) {
+    const otherBullets = otherEntries.map(([task, count]) => {
+      return `•  ${task}: ${count} Slot(s)`;
+    }).join('\n');
+
     bodyRows.push([{
-      content: `Other Work Assignments: ${otherList}`,
+      content: `OTHER ASSIGNED WORK & SPECIAL DUTIES:\n${otherBullets}`,
       colSpan: 4,
-      styles: { fontStyle: 'italic', textColor: [30, 64, 120], fillColor: [244, 248, 254] },
+      styles: { fontStyle: 'bold', textColor: [30, 64, 120], fillColor: [244, 248, 254], cellPadding: 3, lineHeightFactor: 1.35 },
     }]);
   }
 
@@ -266,7 +291,7 @@ export function exportTrainerPDF(trainer, config) {
     startY: 48,
     margin: { left: 14, right: 14 },
     theme: 'grid',
-    styles: { fontSize: 8.5, cellPadding: 2.2, font: 'helvetica', lineColor: LINE_BORDER },
+    styles: { fontSize: 8, cellPadding: 2, font: 'helvetica', lineColor: LINE_BORDER },
     body: bodyRows,
     didParseCell: (dataCell) => {
       if (dataCell.row.index === 0) {
@@ -369,15 +394,22 @@ export function exportAllTrainersPDF(scheduleData) {
   addDocHeader(doc, 'Consolidated Trainer Workload & Deployment Matrix', 'Faculty & Mentor Master Workload and Venue Deployment Summary');
 
   const summaryRows = trainers.map((t, idx) => {
-    const { trainingsBreakdown, activitiesBreakdown, totalTrainings, totalOther } = getTrainerBreakdowns(t, days);
+    const { trainingsList, activitiesBreakdown, totalTrainings, totalOther } = getTrainerBreakdowns(t, days);
 
-    const trainingsDetails = Object.entries(trainingsBreakdown)
-      .map(([bName, count]) => `${bName} (${count})`)
-      .join(', ');
+    const trainingsBullets = trainingsList.length > 0
+      ? trainingsList.map(item => {
+          const vStr = item.venue ? ` [${abbreviateVenue(item.venue)}]` : '';
+          const roleStr = item.mainSlots && item.supportSlots
+            ? ` (${item.mainSlots}M, ${item.supportSlots}S)`
+            : (item.supportSlots ? ' (Supp)' : ' (Main)');
+          return `• ${item.batchName}${vStr} — ${item.slots}h${roleStr}`;
+        }).join('\n')
+      : '— None';
 
-    const otherDetails = Object.entries(activitiesBreakdown)
-      .map(([task, count]) => `${task} (${count})`)
-      .join(', ');
+    const otherEntries = Object.entries(activitiesBreakdown);
+    const otherBullets = otherEntries.length > 0
+      ? otherEntries.map(([task, count]) => `• ${task} — ${count}h`).join('\n')
+      : '—';
 
     const totalActive = totalTrainings + totalOther;
 
@@ -385,8 +417,8 @@ export function exportAllTrainersPDF(scheduleData) {
       idx + 1,
       t.name,
       `${totalTrainings} slots\n(${t.mainCount || 0} Main, ${t.supportCount || 0} Supp)`,
-      trainingsDetails || '— None',
-      otherDetails || '—',
+      trainingsBullets,
+      otherBullets,
       totalActive,
       t.totalFree || 0,
     ];
@@ -395,7 +427,7 @@ export function exportAllTrainersPDF(scheduleData) {
   autoTable(doc, {
     startY: 48,
     margin: { left: 14, right: 14 },
-    head: [['#', 'Trainer Name', 'Total Trainings', 'Trainings (Batches & Venues)', 'Other Activities', 'Total Load', 'Free Slots']],
+    head: [['#', 'Trainer Name', 'Total Trainings', 'Assigned Trainings (Batches, Venues & Hours)', 'Other Assigned Tasks', 'Total Load', 'Free Slots']],
     body: summaryRows,
     theme: 'grid',
     headStyles: {
@@ -412,15 +444,16 @@ export function exportAllTrainersPDF(scheduleData) {
       valign: 'middle',
       lineColor: LINE_BORDER,
       lineWidth: 0.15,
+      lineHeightFactor: 1.25,
     },
     columnStyles: {
       0: { halign: 'center', cellWidth: 10 },
-      1: { fontStyle: 'bold', cellWidth: 36 },
-      2: { halign: 'center', cellWidth: 32, fontStyle: 'bold', textColor: [184, 56, 14] },
-      3: { cellWidth: 86 },
-      4: { cellWidth: 46 },
-      5: { fontStyle: 'bold', halign: 'center', cellWidth: 26, textColor: BRAND_ORANGE },
-      6: { halign: 'center', cellWidth: 22 },
+      1: { fontStyle: 'bold', cellWidth: 34 },
+      2: { halign: 'center', cellWidth: 28, fontStyle: 'bold', textColor: [184, 56, 14] },
+      3: { cellWidth: 96 },
+      4: { cellWidth: 44 },
+      5: { fontStyle: 'bold', halign: 'center', cellWidth: 24, textColor: BRAND_ORANGE },
+      6: { halign: 'center', cellWidth: 20 },
     },
     alternateRowStyles: {
       fillColor: LIGHT_GREY,
@@ -432,15 +465,7 @@ export function exportAllTrainersPDF(scheduleData) {
     doc.addPage();
     addDocHeader(doc, `Timetable & Workload: ${t.name}`, `Weekly Timetable, Trainings & Assigned Venues — ${t.email || t.phone || 'Mentor'}`);
 
-    const { trainingsBreakdown, activitiesBreakdown, totalTrainings, totalOther } = getTrainerBreakdowns(t, days);
-
-    const trainingsList = Object.entries(trainingsBreakdown)
-      .map(([bName, count]) => `${bName}: ${count} slot(s)`)
-      .join('  •  ');
-
-    const otherList = Object.entries(activitiesBreakdown)
-      .map(([task, count]) => `${task}: ${count} slot(s)`)
-      .join('  •  ');
+    const { trainingsList, activitiesBreakdown, totalTrainings, totalOther } = getTrainerBreakdowns(t, days);
 
     const totalOccupied = totalTrainings + totalOther + (t.lunchCount || 0);
 
@@ -453,19 +478,32 @@ export function exportAllTrainersPDF(scheduleData) {
       ],
     ];
 
-    if (trainingsList) {
+    if (trainingsList.length > 0) {
+      const bulletList = trainingsList.map(item => {
+        const roleStr = item.mainSlots && item.supportSlots
+          ? `(${item.mainSlots} Main, ${item.supportSlots} Support)`
+          : (item.supportSlots ? '(Support Mentor)' : '(Main Mentor)');
+        const vStr = item.venue ? ` | Venue: ${item.venue}` : '';
+        return `•  ${item.batchName}${vStr}  —  ${item.slots} Slot(s)  ${roleStr}`;
+      }).join('\n');
+
       bodyRows.push([{
-        content: `All Assigned Trainings & Venues:\n${trainingsList}`,
+        content: `ASSIGNED ACADEMIC TRAININGS & VENUES:\n${bulletList}`,
         colSpan: 4,
-        styles: { fontStyle: 'bold', textColor: [184, 56, 14], fillColor: [255, 248, 244] },
+        styles: { fontStyle: 'bold', textColor: [184, 56, 14], fillColor: [255, 248, 244], cellPadding: 3, lineHeightFactor: 1.35 },
       }]);
     }
 
-    if (otherList) {
+    const otherEntries = Object.entries(activitiesBreakdown);
+    if (otherEntries.length > 0) {
+      const otherBullets = otherEntries.map(([task, count]) => {
+        return `•  ${task}: ${count} Slot(s)`;
+      }).join('\n');
+
       bodyRows.push([{
-        content: `Other Work Assignments: ${otherList}`,
+        content: `OTHER ASSIGNED WORK & SPECIAL DUTIES:\n${otherBullets}`,
         colSpan: 4,
-        styles: { fontStyle: 'italic', textColor: [30, 64, 120], fillColor: [244, 248, 254] },
+        styles: { fontStyle: 'bold', textColor: [30, 64, 120], fillColor: [244, 248, 254], cellPadding: 3, lineHeightFactor: 1.35 },
       }]);
     }
 
@@ -473,7 +511,7 @@ export function exportAllTrainersPDF(scheduleData) {
       startY: 48,
       margin: { left: 14, right: 14 },
       theme: 'grid',
-      styles: { fontSize: 8.5, cellPadding: 2, font: 'helvetica', lineColor: LINE_BORDER },
+      styles: { fontSize: 8, cellPadding: 2, font: 'helvetica', lineColor: LINE_BORDER },
       body: bodyRows,
       didParseCell: (dataCell) => {
         if (dataCell.row.index === 0) {
