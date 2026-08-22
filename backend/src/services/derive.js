@@ -102,7 +102,11 @@ export function buildSchedule({ config, groups, trainers, venues, batches, activ
 
   /* ── batch cards, grouped by year ── */
   const batchCards = batches.map(b => {
-    const rows = collapseRows(b.sessions || [], config);
+    const batchSessions = (b.sessions || []).map(s => ({
+      ...s,
+      venue: s.venue !== undefined ? s.venue : (b.venue || ''),
+    }));
+    const rows = collapseRows(batchSessions, config);
     /* A batch can meet in different halls on different days now, so there is
        no single "the" venue any more — just the distinct set actually in use,
        read off the rows so it always agrees with what's displayed. */
@@ -174,10 +178,11 @@ export function buildSchedule({ config, groups, trainers, venues, batches, activ
           tRole[name][s.day][i] = 'support';
         }
       }
-      if (s.venue && vGrid[s.venue]) {
+      const venueName = s.venue || b.venue || '';
+      if (venueName && vGrid[venueName]) {
         for (const i of s.slots) {
           if (i < 0 || i >= slotCount) continue;
-          claim(vGrid, s.venue, s.day, i, b.name, 'venue');
+          claim(vGrid, venueName, s.day, i, b.name, 'venue');
         }
       }
     }

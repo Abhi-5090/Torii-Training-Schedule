@@ -62,8 +62,16 @@ async function run() {
 
   let sessions = 0;
   for (const [i, b] of data.batches.entries()) {
-    await Batch.findOneAndUpdate({ name: b.name }, { ...b, order: i }, { upsert: true });
-    sessions += b.sessions.length;
+    const batchSessions = (b.sessions || []).map(s => ({
+      ...s,
+      venue: s.venue !== undefined ? s.venue : (b.venue || ''),
+    }));
+    await Batch.findOneAndUpdate(
+      { name: b.name },
+      { ...b, sessions: batchSessions, order: i },
+      { upsert: true, new: true },
+    );
+    sessions += batchSessions.length;
   }
   console.log(`  batches ${data.batches.length} carrying ${sessions} sessions`);
 

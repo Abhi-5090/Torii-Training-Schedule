@@ -56,7 +56,7 @@ export default function BatchesTab() {
   }
 
   async function remove(b) {
-    if (!confirmDelete(`the batch "${b.name}" and its ${b.sessions.length} session(s)`)) return;
+    if (!confirmDelete(`the batch "${b.name}" and its ${(b.sessions || []).length} session(s)`)) return;
     try {
       await api.remove('batches', b._id);
       await reload();
@@ -120,9 +120,10 @@ export default function BatchesTab() {
               </thead>
               <tbody>
                 {shown.map(b => {
-                  const unstaffed = b.sessions.filter(s => !s.mainTrainers.length).length;
-                  const noHall = b.sessions.filter(s => !s.venue).length;
-                  const halls = [...new Set(b.sessions.map(s => s.venue).filter(Boolean))];
+                  const sess = b.sessions || [];
+                  const unstaffed = sess.filter(s => !(s.mainTrainers || []).length).length;
+                  const noHall = sess.filter(s => !s.venue).length;
+                  const halls = [...new Set(sess.map(s => s.venue).filter(Boolean))];
                   return (
                     <tr key={b._id}>
                       <td className="nm">
@@ -131,7 +132,7 @@ export default function BatchesTab() {
                       </td>
                       <td className="muted">{b.group}</td>
                       <td>
-                        <span className="mono">{b.sessions.length}</span>
+                        <span className="mono">{sess.length}</span>
                         {!!unstaffed && <span className="pill-tag warn" style={{ marginLeft: 8 }}>{unstaffed} unstaffed</span>}
                       </td>
                       <td className="muted" style={{ fontSize: 12.5 }}>

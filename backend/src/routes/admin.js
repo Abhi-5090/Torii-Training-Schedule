@@ -352,7 +352,8 @@ router.get('/availability', wrap(async (req, res) => {
         for (const i of overlap) {
           const hit = { day: s.day, slotIndex: i, slot: slotName(i), batch: b.name };
           for (const n of [...(s.mainTrainers || []), ...(s.supportTrainers || [])]) push(trainerHits, n, hit);
-          if (b.venue) push(venueHits, b.venue, hit);
+          const venueName = s.venue || b.venue;
+          if (venueName) push(venueHits, venueName, hit);
         }
       }
     }

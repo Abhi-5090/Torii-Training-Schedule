@@ -106,6 +106,7 @@
             7
           ],
           "subject": "Coding",
+          "venue": "Torii Block · 2nd Floor Hall",
           "mainTrainers": [
             "Suneeta",
             "Abhishek"
@@ -119,6 +120,7 @@
             7
           ],
           "subject": "Coding",
+          "venue": "Torii Block · 2nd Floor Hall",
           "mainTrainers": [
             "Suneeta",
             "Abhishek"
@@ -132,6 +134,7 @@
             7
           ],
           "subject": "Coding",
+          "venue": "Torii Block · 2nd Floor Hall",
           "mainTrainers": [
             "Suneeta",
             "Abhishek"
@@ -145,6 +148,7 @@
             7
           ],
           "subject": "Coding",
+          "venue": "Torii Block · 2nd Floor Hall",
           "mainTrainers": [
             "Suneeta",
             "Sudhir",
@@ -159,6 +163,7 @@
             1
           ],
           "subject": "GenAI",
+          "venue": "Torii Block · 2nd Floor Hall",
           "mainTrainers": [
             "Bhargav"
           ],
@@ -174,6 +179,7 @@
             7
           ],
           "subject": "GenAI",
+          "venue": "Torii Block · 2nd Floor Hall",
           "mainTrainers": [
             "Bhargav"
           ],
@@ -198,6 +204,7 @@
             7
           ],
           "subject": "Coding",
+          "venue": "Torii Block · 1st Floor Hall",
           "mainTrainers": [
             "Sudhir"
           ],
@@ -212,6 +219,7 @@
             7
           ],
           "subject": "Coding",
+          "venue": "Torii Block · 1st Floor Hall",
           "mainTrainers": [
             "Sudhir"
           ],
@@ -226,6 +234,7 @@
             7
           ],
           "subject": "Coding",
+          "venue": "Torii Block · 1st Floor Hall",
           "mainTrainers": [
             "Sudhir"
           ],
@@ -240,6 +249,7 @@
             7
           ],
           "subject": "Aptitude",
+          "venue": "Torii Block · 1st Floor Hall",
           "mainTrainers": [
             "Naveen"
           ],
@@ -254,6 +264,7 @@
             1
           ],
           "subject": "SQL",
+          "venue": "Torii Block · 1st Floor Hall",
           "mainTrainers": [
             "Harshavardhini",
             "Sampath"
@@ -267,6 +278,7 @@
             7
           ],
           "subject": "SQL",
+          "venue": "Torii Block · 1st Floor Hall",
           "mainTrainers": [
             "Harshavardhini",
             "Sampath"
@@ -289,6 +301,7 @@
             5
           ],
           "subject": "GenAI",
+          "venue": "Examination Block · 2nd Floor Hall",
           "mainTrainers": [
             "Bhargav"
           ],
@@ -304,6 +317,7 @@
             5
           ],
           "subject": "GenAI",
+          "venue": "Examination Block · 2nd Floor Hall",
           "mainTrainers": [
             "Bhargav"
           ],
@@ -319,6 +333,7 @@
             1
           ],
           "subject": "Coding",
+          "venue": "Examination Block · 2nd Floor Hall",
           "mainTrainers": [
             "Suneeta",
             "Sudhir"
@@ -343,6 +358,7 @@
             5
           ],
           "subject": "GenAI",
+          "venue": "Examination Block · 2nd Floor Hall",
           "mainTrainers": [
             "Bhargav"
           ],
@@ -358,6 +374,7 @@
             1
           ],
           "subject": "GenAI",
+          "venue": "Examination Block · 2nd Floor Hall",
           "mainTrainers": [
             "Bhargav"
           ],
@@ -373,6 +390,7 @@
             5
           ],
           "subject": "Coding",
+          "venue": "Examination Block · 2nd Floor Hall",
           "mainTrainers": [
             "Suneeta",
             "Sudhir"
@@ -397,6 +415,7 @@
             5
           ],
           "subject": "Claude",
+          "venue": "Examination Block · 3rd Floor Hall",
           "mainTrainers": [
             "Peter",
             "Naveen",
@@ -413,6 +432,7 @@
             5
           ],
           "subject": "Claude",
+          "venue": "Examination Block · 3rd Floor Hall",
           "mainTrainers": [
             "Peter",
             "Naveen",
@@ -429,6 +449,7 @@
             1
           ],
           "subject": "Aptitude",
+          "venue": "Examination Block · 3rd Floor Hall",
           "mainTrainers": [
             "Naveen"
           ],
@@ -452,6 +473,7 @@
             5
           ],
           "subject": "Claude",
+          "venue": "Examination Block · 3rd Floor Hall",
           "mainTrainers": [
             "Peter",
             "Naveen",
@@ -468,6 +490,7 @@
             1
           ],
           "subject": "Claude",
+          "venue": "Examination Block · 3rd Floor Hall",
           "mainTrainers": [
             "Peter",
             "Naveen",
@@ -484,6 +507,7 @@
             5
           ],
           "subject": "Aptitude",
+          "venue": "Examination Block · 3rd Floor Hall",
           "mainTrainers": [
             "Naveen"
           ],
@@ -507,6 +531,7 @@
             1
           ],
           "subject": "C Programming",
+          "venue": "",
           "mainTrainers": [],
           "supportTrainers": []
         },
@@ -517,6 +542,7 @@
             3
           ],
           "subject": "C Programming",
+          "venue": "",
           "mainTrainers": [],
           "supportTrainers": []
         }
@@ -536,6 +562,7 @@
             3
           ],
           "subject": "C Programming",
+          "venue": "",
           "mainTrainers": [],
           "supportTrainers": []
         },
@@ -546,6 +573,7 @@
             1
           ],
           "subject": "C Programming",
+          "venue": "",
           "mainTrainers": [],
           "supportTrainers": []
         }
@@ -565,6 +593,7 @@
             3
           ],
           "subject": "C Programming",
+          "venue": "",
           "mainTrainers": [],
           "supportTrainers": []
         },
@@ -575,6 +604,7 @@
             1
           ],
           "subject": "C Programming",
+          "venue": "",
           "mainTrainers": [],
           "supportTrainers": []
         }
@@ -594,6 +624,7 @@
             3
           ],
           "subject": "C Programming",
+          "venue": "",
           "mainTrainers": [],
           "supportTrainers": []
         },
@@ -604,6 +635,7 @@
             1
           ],
           "subject": "C Programming",
+          "venue": "",
           "mainTrainers": [],
           "supportTrainers": []
         }
@@ -623,6 +655,7 @@
             1
           ],
           "subject": "Python",
+          "venue": "",
           "mainTrainers": [],
           "supportTrainers": []
         },
@@ -633,6 +666,7 @@
             3
           ],
           "subject": "Python",
+          "venue": "",
           "mainTrainers": [],
           "supportTrainers": []
         }
@@ -652,6 +686,7 @@
             3
           ],
           "subject": "Python",
+          "venue": "",
           "mainTrainers": [],
           "supportTrainers": []
         },
@@ -662,6 +697,7 @@
             1
           ],
           "subject": "Python",
+          "venue": "",
           "mainTrainers": [],
           "supportTrainers": []
         }

@@ -25,10 +25,10 @@ export default function TrainersTab() {
   /* how many periods a week this trainer actually holds */
   const load = name => {
     let main = 0, support = 0;
-    for (const b of batches) {
-      for (const s of b.sessions) {
-        if (s.mainTrainers.includes(name)) main += s.slots.length;
-        else if (s.supportTrainers.includes(name)) support += s.slots.length;
+    for (const b of batches || []) {
+      for (const s of b.sessions || []) {
+        if ((s.mainTrainers || []).includes(name)) main += (s.slots || []).length;
+        else if ((s.supportTrainers || []).includes(name)) support += (s.slots || []).length;
       }
     }
     return { main, support };

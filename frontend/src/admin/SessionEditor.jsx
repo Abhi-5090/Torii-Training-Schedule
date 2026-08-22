@@ -7,12 +7,12 @@ import HallPicker from './HallPicker.jsx';
  * Asks the API who is already busy at this day + period, so a clash shows up
  * while the session is being written rather than after it is saved.
  */
-function useAvailability(day, slots, excludeBatch) {
+function useAvailability(day, slots = [], excludeBatch) {
   const [busy, setBusy] = useState({ trainers: {}, venues: {} });
 
-  const key = `${day}|${[...slots].sort((a, b) => a - b).join(',')}`;
+  const key = `${day}|${[...(slots || [])].sort((a, b) => a - b).join(',')}`;
   useEffect(() => {
-    if (!day || !slots.length) { setBusy({ trainers: {}, venues: {} }); return; }
+    if (!day || !slots?.length) { setBusy({ trainers: {}, venues: {} }); return; }
     let live = true;
     const t = setTimeout(() => {
       api.availability([{ day, slots }], excludeBatch)
@@ -29,19 +29,19 @@ function useAvailability(day, slots, excludeBatch) {
   return busy;
 }
 
-function MentorPicker({ label, help, all, chosen, exclude, busy, onToggle }) {
+function MentorPicker({ label, help, all, chosen = [], exclude = [], busy = {}, onToggle }) {
   return (
     <Field label={label} help={help}>
       <div className="picker">
         {all.length === 0 && <span className="muted" style={{ fontSize: 13, padding: 6 }}>No trainers yet.</span>}
         {all.map(t => {
-          const disabled = exclude.includes(t.name);
+          const disabled = (exclude || []).includes(t.name);
           const taken = busy[t.name];
           return (
             <label key={t.name} className={taken ? 'taken' : ''} style={disabled ? { opacity: .4 } : undefined}>
               <input
                 type="checkbox"
-                checked={chosen.includes(t.name)}
+                checked={(chosen || []).includes(t.name)}
                 disabled={disabled}
                 onChange={() => onToggle(t.name)}
               />
@@ -56,22 +56,23 @@ function MentorPicker({ label, help, all, chosen, exclude, busy, onToggle }) {
 }
 
 export default function SessionEditor({ index, session, config, trainers, venues, batchId, onChange, onRemove }) {
-  const busy = useAvailability(session.day, session.slots, batchId);
+  const busy = useAvailability(session.day, session.slots || [], batchId);
 
   const set = patch => onChange({ ...session, ...patch });
 
   const toggleSlot = i => {
-    const has = session.slots.includes(i);
-    set({ slots: (has ? session.slots.filter(s => s !== i) : [...session.slots, i]).sort((a, b) => a - b) });
+    const currentSlots = session.slots || [];
+    const has = currentSlots.includes(i);
+    set({ slots: (has ? currentSlots.filter(s => s !== i) : [...currentSlots, i]).sort((a, b) => a - b) });
   };
 
   const toggleIn = (field, name) => {
-    const list = session[field];
+    const list = session[field] || [];
     set({ [field]: list.includes(name) ? list.filter(n => n !== name) : [...list, name] });
   };
 
-  const label = session.slots.length
-    ? `Slot ${session.slots.map(i => i + 1).join(', ')}`
+  const label = (session.slots || []).length
+    ? `Slot ${(session.slots || []).map(i => i + 1).join(', ')}`
     : 'No period picked';
 
   return (
@@ -107,7 +108,7 @@ export default function SessionEditor({ index, session, config, trainers, venues
             <button
               key={i}
               type="button"
-              className={`${session.slots.includes(i) ? 'on' : ''} ${i === config.lunchIndex ? 'lunchy' : ''}`}
+              className={`${(session.slots || []).includes(i) ? 'on' : ''} ${i === config.lunchIndex ? 'lunchy' : ''}`}
               onClick={() => toggleSlot(i)}
             >
               {i + 1}<span className="t">{s}</span>
@@ -130,8 +131,8 @@ export default function SessionEditor({ index, session, config, trainers, venues
           label="Main mentors"
           help="Delivers the class."
           all={trainers}
-          chosen={session.mainTrainers}
-          exclude={session.supportTrainers}
+          chosen={session.mainTrainers || []}
+          exclude={session.supportTrainers || []}
           busy={busy.trainers}
           onToggle={n => toggleIn('mainTrainers', n)}
         />
@@ -139,8 +140,8 @@ export default function SessionEditor({ index, session, config, trainers, venues
           label="Support mentors"
           help="Assists. Someone already picked as main cannot also be support."
           all={trainers}
-          chosen={session.supportTrainers}
-          exclude={session.mainTrainers}
+          chosen={session.supportTrainers || []}
+          exclude={session.mainTrainers || []}
           busy={busy.trainers}
           onToggle={n => toggleIn('supportTrainers', n)}
         />

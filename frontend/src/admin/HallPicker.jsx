@@ -22,8 +22,8 @@ export default function HallPicker({ venues, sessions, value, batchId, onChange,
 
   /* only sessions that are actually pinned down can be checked */
   const when = useMemo(
-    () => sessions
-      .filter(s => s.day && s.slots.length)
+    () => (sessions || [])
+      .filter(s => s.day && (s.slots || []).length)
       .map(s => ({ day: s.day, slots: s.slots })),
     [sessions],
   );

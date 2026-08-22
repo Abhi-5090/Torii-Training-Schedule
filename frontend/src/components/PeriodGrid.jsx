@@ -75,6 +75,13 @@ function Row({ i, label, entity, days, lunchIndex, onEditCell }) {
             </button>
           );
         }
+        if (isClass(v)) {
+          return (
+            <div className="cell occ" key={d} title={v}>
+              {v}
+            </div>
+          );
+        }
         if (isGlobalLunch) {
           return clickable
             ? <button type="button" className="cell lunch editable" key={d} onClick={handleClick} title="Click to log something other than the standard break">Lunch</button>
