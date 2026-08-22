@@ -65,25 +65,38 @@ function addDocFooter(doc) {
   }
 }
 
-// Helper to format trainer's trainings breakdown if not already calculated
+// Helper to extract detailed trainings and activities breakdowns with venue details
 function getTrainerBreakdowns(trainer, days = []) {
-  const trainingsBreakdown = trainer.trainingsBreakdown ? { ...trainer.trainingsBreakdown } : {};
-  const activitiesBreakdown = trainer.activitiesBreakdown ? { ...trainer.activitiesBreakdown } : {};
+  const trainingsBreakdown = {};
+  const activitiesBreakdown = {};
 
-  if (!Object.keys(trainingsBreakdown).length && trainer.grid && trainer.roles) {
+  if (trainer.grid && trainer.roles) {
     for (const d of Object.keys(trainer.grid)) {
       const gRow = trainer.grid[d] || [];
       const rRow = trainer.roles[d] || [];
+      const vRow = trainer.venues ? trainer.venues[d] || [] : [];
+
       for (let i = 0; i < gRow.length; i++) {
         const val = gRow[i];
         const role = rRow[i];
+        const venue = vRow[i] || '';
+
         if ((role === 'main' || role === 'support') && val) {
-          trainingsBreakdown[val] = (trainingsBreakdown[val] || 0) + 1;
+          const key = venue ? `${val} [${venue}]` : val;
+          trainingsBreakdown[key] = (trainingsBreakdown[key] || 0) + 1;
         } else if (role === 'other' && val) {
           activitiesBreakdown[val] = (activitiesBreakdown[val] || 0) + 1;
         }
       }
     }
+  }
+
+  // Fallback to pre-calculated breakdowns if grid was empty
+  if (!Object.keys(trainingsBreakdown).length && trainer.trainingsBreakdown) {
+    Object.assign(trainingsBreakdown, trainer.trainingsBreakdown);
+  }
+  if (!Object.keys(activitiesBreakdown).length && trainer.activitiesBreakdown) {
+    Object.assign(activitiesBreakdown, trainer.activitiesBreakdown);
   }
 
   const totalTrainings = (trainer.mainCount || 0) + (trainer.supportCount || 0);
@@ -209,7 +222,7 @@ export function exportTrainerPDF(trainer, config) {
   const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
   const { slots, days, lunchIndex } = config;
 
-  addDocHeader(doc, `Trainer Timetable & Workload: ${trainer.name}`, 'Individual Mentor Weekly Schedule & Assignments');
+  addDocHeader(doc, `Trainer Timetable & Workload: ${trainer.name}`, 'Individual Mentor Weekly Schedule & Venue Deployment');
 
   const { trainingsBreakdown, activitiesBreakdown, totalTrainings, totalOther } = getTrainerBreakdowns(trainer, days);
 
@@ -234,7 +247,7 @@ export function exportTrainerPDF(trainer, config) {
 
   if (trainingsList) {
     bodyRows.push([{
-      content: `All Trainings (Batches): ${trainingsList}`,
+      content: `All Assigned Trainings & Venues:\n${trainingsList}`,
       colSpan: 4,
       styles: { fontStyle: 'bold', textColor: [184, 56, 14], fillColor: [255, 248, 244] },
     }]);
@@ -271,11 +284,12 @@ export function exportTrainerPDF(trainer, config) {
     for (const day of days) {
       const val = trainer.grid?.[day]?.[slotIdx] || '';
       const role = trainer.roles?.[day]?.[slotIdx] || '';
+      const venue = trainer.venues?.[day]?.[slotIdx] || '';
       
       if (role === 'main') {
-        row.push(`${val}\n[MAIN MENTOR]`);
+        row.push(`${val}${venue ? `\n@ ${venue}` : ''}\n[MAIN MENTOR]`);
       } else if (role === 'support') {
-        row.push(`${val}\n[SUPPORT]`);
+        row.push(`${val}${venue ? `\n@ ${venue}` : ''}\n[SUPPORT]`);
       } else if (role === 'other') {
         row.push(`${val}\n[ASSIGNED]`);
       } else if (role === 'lunch' || (slotIdx === lunchIndex && (!val || val.toLowerCase().includes('lunch')))) {
@@ -304,15 +318,15 @@ export function exportTrainerPDF(trainer, config) {
     },
     styles: {
       font: 'helvetica',
-      fontSize: 8,
-      cellPadding: 2.5,
+      fontSize: 7.5,
+      cellPadding: 2.2,
       halign: 'center',
       valign: 'middle',
       lineColor: LINE_BORDER,
       lineWidth: 0.15,
     },
     columnStyles: {
-      0: { fontStyle: 'bold', cellWidth: 32, fillColor: LIGHT_GREY },
+      0: { fontStyle: 'bold', cellWidth: 30, fillColor: LIGHT_GREY },
     },
     didParseCell: (dataCell) => {
       if (dataCell.section === 'body' && dataCell.column.index > 0) {
@@ -351,7 +365,7 @@ export function exportAllTrainersPDF(scheduleData) {
   const { trainers, slots, days, lunchIndex } = scheduleData;
 
   // Page 1: Executive Trainer Workload Summary Matrix
-  addDocHeader(doc, 'Consolidated Trainer Workload & Deployment Matrix', 'Faculty & Mentor Master Workload and Trainings Summary');
+  addDocHeader(doc, 'Consolidated Trainer Workload & Deployment Matrix', 'Faculty & Mentor Master Workload and Venue Deployment Summary');
 
   const summaryRows = trainers.map((t, idx) => {
     const { trainingsBreakdown, activitiesBreakdown, totalTrainings, totalOther } = getTrainerBreakdowns(t, days);
@@ -380,7 +394,7 @@ export function exportAllTrainersPDF(scheduleData) {
   autoTable(doc, {
     startY: 48,
     margin: { left: 14, right: 14 },
-    head: [['#', 'Trainer Name', 'Total Trainings', 'Trainings (Batches & Sessions)', 'Other Activities', 'Total Load', 'Free Slots']],
+    head: [['#', 'Trainer Name', 'Total Trainings', 'Trainings (Batches & Venues)', 'Other Activities', 'Total Load', 'Free Slots']],
     body: summaryRows,
     theme: 'grid',
     headStyles: {
@@ -415,7 +429,7 @@ export function exportAllTrainersPDF(scheduleData) {
   // Individual Timetable Pages for each Trainer
   for (const t of trainers) {
     doc.addPage();
-    addDocHeader(doc, `Timetable & Workload: ${t.name}`, `Weekly Timetable, Trainings & Assigned Duties — ${t.email || t.phone || 'Mentor'}`);
+    addDocHeader(doc, `Timetable & Workload: ${t.name}`, `Weekly Timetable, Trainings & Assigned Venues — ${t.email || t.phone || 'Mentor'}`);
 
     const { trainingsBreakdown, activitiesBreakdown, totalTrainings, totalOther } = getTrainerBreakdowns(t, days);
 
@@ -440,7 +454,7 @@ export function exportAllTrainersPDF(scheduleData) {
 
     if (trainingsList) {
       bodyRows.push([{
-        content: `All Trainings (Batches): ${trainingsList}`,
+        content: `All Assigned Trainings & Venues:\n${trainingsList}`,
         colSpan: 4,
         styles: { fontStyle: 'bold', textColor: [184, 56, 14], fillColor: [255, 248, 244] },
       }]);
@@ -476,11 +490,12 @@ export function exportAllTrainersPDF(scheduleData) {
       for (const day of days) {
         const val = t.grid?.[day]?.[slotIdx] || '';
         const role = t.roles?.[day]?.[slotIdx] || '';
+        const venue = t.venues?.[day]?.[slotIdx] || '';
         
         if (role === 'main') {
-          row.push(`${val}\n[MAIN MENTOR]`);
+          row.push(`${val}${venue ? `\n@ ${venue}` : ''}\n[MAIN MENTOR]`);
         } else if (role === 'support') {
-          row.push(`${val}\n[SUPPORT]`);
+          row.push(`${val}${venue ? `\n@ ${venue}` : ''}\n[SUPPORT]`);
         } else if (role === 'other') {
           row.push(`${val}\n[ASSIGNED]`);
         } else if (role === 'lunch' || (slotIdx === lunchIndex && (!val || val.toLowerCase().includes('lunch')))) {
@@ -509,15 +524,15 @@ export function exportAllTrainersPDF(scheduleData) {
       },
       styles: {
         font: 'helvetica',
-        fontSize: 8,
-        cellPadding: 2.5,
+        fontSize: 7.5,
+        cellPadding: 2.2,
         halign: 'center',
         valign: 'middle',
         lineColor: LINE_BORDER,
         lineWidth: 0.15,
       },
       columnStyles: {
-        0: { fontStyle: 'bold', cellWidth: 32, fillColor: LIGHT_GREY },
+        0: { fontStyle: 'bold', cellWidth: 30, fillColor: LIGHT_GREY },
       },
       didParseCell: (dataCell) => {
         if (dataCell.section === 'body' && dataCell.column.index > 0) {

@@ -42,6 +42,7 @@ function Row({ i, label, entity, days, lunchIndex, onEditCell }) {
       {days.map(d => {
         const v = entity.grid[d]?.[i] || '';
         const role = entity.roles ? entity.roles[d]?.[i] || '' : '';
+        const venue = entity.venues ? entity.venues[d]?.[i] || '' : '';
         const isGlobalLunch = i === lunchIndex && !isClass(v);
 
         /* a real class is never editable here — that lives in Batches & Sessions */
@@ -50,9 +51,11 @@ function Row({ i, label, entity, days, lunchIndex, onEditCell }) {
             <div
               className={`cell occ ${role === 'support' ? 'support' : ''}`}
               key={d}
-              title={`${v} — ${role === 'support' ? 'Support' : 'Main'} mentor`}
+              title={`${v} — ${role === 'support' ? 'Support' : 'Main'} mentor${venue ? ` (${venue})` : ''}`}
             >
-              {v}<span className="rl">{role.toUpperCase()}</span>
+              <div className="batch-name">{v}</div>
+              {venue && <div className="cell-venue">{venue}</div>}
+              <span className="rl">{role.toUpperCase()}</span>
             </div>
           );
         }

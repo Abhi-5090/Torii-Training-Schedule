@@ -136,9 +136,13 @@ export function buildSchedule({ config, groups, trainers, venues, batches, activ
     .map(g => ({ group: g.name, note: g.note || '' }));
 
   /* ── trainer grids ── */
-  const tGrid = {}, tRole = {};
+  const tGrid = {}, tRole = {}, tVenue = {};
   const ensureTrainer = name => {
-    if (!tGrid[name]) { tGrid[name] = emptyGrid(days, slotCount); tRole[name] = emptyGrid(days, slotCount); }
+    if (!tGrid[name]) {
+      tGrid[name] = emptyGrid(days, slotCount);
+      tRole[name] = emptyGrid(days, slotCount);
+      tVenue[name] = emptyGrid(days, slotCount);
+    }
   };
   for (const t of trainers) ensureTrainer(t.name);
 
@@ -161,6 +165,7 @@ export function buildSchedule({ config, groups, trainers, venues, batches, activ
     for (const s of b.sessions || []) {
       if (!days.includes(s.day)) continue;
       const main = s.mainTrainers || [], support = s.supportTrainers || [];
+      const venueName = s.venue || b.venue || '';
 
       for (const name of main) {
         ensureTrainer(name);
@@ -168,6 +173,7 @@ export function buildSchedule({ config, groups, trainers, venues, batches, activ
           if (i < 0 || i >= slotCount) continue;
           claim(tGrid, name, s.day, i, b.name, 'trainer');
           tRole[name][s.day][i] = 'main';
+          if (venueName) tVenue[name][s.day][i] = venueName;
         }
       }
       for (const name of support) {
@@ -176,9 +182,9 @@ export function buildSchedule({ config, groups, trainers, venues, batches, activ
           if (i < 0 || i >= slotCount) continue;
           claim(tGrid, name, s.day, i, b.name, 'trainer');
           tRole[name][s.day][i] = 'support';
+          if (venueName) tVenue[name][s.day][i] = venueName;
         }
       }
-      const venueName = s.venue || b.venue || '';
       if (venueName && vGrid[venueName]) {
         for (const i of s.slots) {
           if (i < 0 || i >= slotCount) continue;
@@ -242,14 +248,14 @@ export function buildSchedule({ config, groups, trainers, venues, batches, activ
   };
 
   const trainerViews = trainers.map(t => {
-    const grid = tGrid[t.name], roles = tRole[t.name];
+    const grid = tGrid[t.name], roles = tRole[t.name], venues = tVenue[t.name];
     const s = summarise(grid, roles);
     return {
       id: String(t._id || t.id || t.name),
       name: t.name,
       email: t.email || '',
       phone: t.phone || '',
-      grid, roles,
+      grid, roles, venues,
       free: s.free, totalFree: s.totalFree, totalBusy: s.totalBusy,
       totalTrainings: s.totalTrainings,
       trainingsBreakdown: s.trainingsBreakdown,
