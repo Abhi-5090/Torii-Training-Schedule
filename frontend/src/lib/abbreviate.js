@@ -50,3 +50,20 @@ export function abbreviateVenue(str) {
 
   return s.trim();
 }
+
+export const DAY_MAP = {
+  Monday: 'Mon',
+  Tuesday: 'Tue',
+  Wednesday: 'Wed',
+  Thursday: 'Thu',
+  Friday: 'Fri',
+  Saturday: 'Sat',
+  Sunday: 'Sun',
+};
+
+export function formatDayShort(d) {
+  if (!d) return '';
+  return DAY_MAP[d] || d.slice(0, 3);
+}
+
+

@@ -12,15 +12,16 @@ import PeriodGrid, { Counts, freeAllDay, dayShort } from '../components/PeriodGr
 import ActivityModal from '../components/ActivityModal.jsx';
 import DayWiseView from '../components/DayWiseView.jsx';
 import { CalendarIcon, CalendarDayIcon, PersonIcon, BuildingIcon, SearchIcon } from '../components/Icons.jsx';
+import { formatDayShort } from '../lib/abbreviate.js';
 
 /* loading dwell, ms — the same beats the original board used */
 const D_VIEW = 900, D_FILTER = 620, D_SEARCH = 460;
 
 const VIEWS = {
-  schedule: { msg: 'Loading class schedule', n: 3, label: 'Overall Schedule', Icon: CalendarIcon },
-  daywise:  { msg: 'Loading day-wise schedule', n: 3, label: 'Day Wise Schedule', Icon: CalendarDayIcon },
-  trainer:  { msg: 'Loading trainer grids',  n: 2, label: 'Trainer Schedule', Icon: PersonIcon },
-  venue:    { msg: 'Loading hall occupancy', n: 2, label: 'Venue Schedule',   Icon: BuildingIcon },
+  schedule: { msg: 'Loading class schedule', n: 3, label: 'Overall Schedule', shortLabel: 'Overall', Icon: CalendarIcon },
+  daywise:  { msg: 'Loading day-wise schedule', n: 3, label: 'Day Wise Schedule', shortLabel: 'Day Wise', Icon: CalendarDayIcon },
+  trainer:  { msg: 'Loading trainer grids',  n: 2, label: 'Trainer Schedule',  shortLabel: 'Trainers', Icon: PersonIcon },
+  venue:    { msg: 'Loading hall occupancy', n: 2, label: 'Venue Schedule',    shortLabel: 'Venues',   Icon: BuildingIcon },
 };
 
 export default function Board({ admin }) {
@@ -132,7 +133,12 @@ export default function Board({ admin }) {
                   className={`chip ${d === dayFilter ? 'on' : ''} ${busy ? 'busy' : ''}`}
                   onClick={() => setDayFilter(d)}
                 >
-                  {d === 'All' ? 'All days' : dayShort(d)}
+                  {d === 'All' ? 'All days' : (
+                    <>
+                      <span className="day-full">{d}</span>
+                      <span className="day-abbr">{formatDayShort(d)}</span>
+                    </>
+                  )}
                 </button>
               ))}
             </div>
@@ -242,14 +248,16 @@ function Segmented({ view, onChange }) {
   return (
     <div className="seg" ref={segRef} data-view={view}>
       <span className="pill" style={{ width: `${pill.width}px`, transform: `translateX(${pill.x}px)` }} />
-      {Object.entries(VIEWS).map(([key, { label, Icon }]) => (
+      {Object.entries(VIEWS).map(([key, { label, shortLabel, Icon }]) => (
         <button
           key={key}
           className={key === view ? 'on' : ''}
           data-v={key}
           onClick={() => { if (key !== view) onChange(key); }}
         >
-          <Icon />{label}
+          <Icon />
+          <span className="tab-full">{label}</span>
+          <span className="tab-abbr">{shortLabel || label}</span>
         </button>
       ))}
     </div>

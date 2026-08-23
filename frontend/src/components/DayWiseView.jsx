@@ -2,11 +2,11 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { reveal } from '../lib/reveal.js';
 import { exportDayPDF } from '../lib/pdfExport.js';
 import { PinIcon, ClockIcon, GridIcon, TimelineIcon, DownloadIcon, SearchIcon } from './Icons.jsx';
-import { dayShort } from './PeriodGrid.jsx';
+import { formatDayShort } from '../lib/abbreviate.js';
 
 export default function DayWiseView({ data, selectedDay, onSelectDay, query, onQueryChange }) {
   const host = useRef(null);
-  const [mode, setMode] = useState('batch'); // 'batch' | 'timeline'
+  const [mode, setMode] = useState('timeline'); // 'timeline' (primary) | 'batch'
 
   useEffect(() => {
     reveal(host.current);
@@ -137,26 +137,24 @@ export default function DayWiseView({ data, selectedDay, onSelectDay, query, onQ
                 type="button"
                 className={`day-chip ${isSelected ? 'on' : ''}`}
                 onClick={() => onSelectDay(d)}
+                title={`${d} schedule (${info.totalSessions} sessions)`}
               >
-                <span className="day-name">{d}</span>
-                <span className="day-badge">{info.totalSessions} sessions</span>
+                <span className="day-name">
+                  <span className="day-full">{d}</span>
+                  <span className="day-abbr">{formatDayShort(d)}</span>
+                </span>
+                <span className="day-badge">
+                  <span className="badge-full">{info.totalSessions} sessions</span>
+                  <span className="badge-abbr">{info.totalSessions} sess</span>
+                </span>
               </button>
             );
           })}
         </div>
 
         <div className="daywise-actions">
-          {/* Mode Switcher */}
+          {/* Mode Switcher: Timeline is primary and first, By Batch is secondary and second */}
           <div className="mode-toggle" role="group" aria-label="View mode">
-            <button
-              type="button"
-              className={`mode-btn ${mode === 'batch' ? 'on' : ''}`}
-              onClick={() => setMode('batch')}
-              title="Group by Year & Batch"
-            >
-              <GridIcon />
-              <span>By Batch</span>
-            </button>
             <button
               type="button"
               className={`mode-btn ${mode === 'timeline' ? 'on' : ''}`}
@@ -165,6 +163,15 @@ export default function DayWiseView({ data, selectedDay, onSelectDay, query, onQ
             >
               <TimelineIcon />
               <span>Timeline</span>
+            </button>
+            <button
+              type="button"
+              className={`mode-btn ${mode === 'batch' ? 'on' : ''}`}
+              onClick={() => setMode('batch')}
+              title="Group by Year & Batch"
+            >
+              <GridIcon />
+              <span>By Batch</span>
             </button>
           </div>
 
@@ -201,80 +208,8 @@ export default function DayWiseView({ data, selectedDay, onSelectDay, query, onQ
         </div>
       </div>
 
-      {/* Main Content Area */}
-      {mode === 'batch' ? (
-        <div className="daywise-batch-mode">
-          {filterDayBatches(currentStats.activeBatches).length === 0 ? (
-            <p className="empty">
-              {q ? `No batches or sessions match “${q}” on ${activeDay}.` : `No academic sessions scheduled for ${activeDay}.`}
-            </p>
-          ) : (
-            filterDayBatches(currentStats.activeBatches).map((g, gi) => (
-              <div className="group rv" key={g.group}>
-                <div className="group-head">
-                  <span className={`yr ${gi === 0 ? 'hl' : ''}`}>{g.group}</span>
-                  <span className="rule" />
-                  <span className="cnt">{g.batches.length} {g.batches.length > 1 ? 'batches' : 'batch'} active</span>
-                </div>
-
-                <div className="grid-cards">
-                  {g.batches.map(b => (
-                    <article className="bcard day-bcard rv" key={b.id}>
-                      <header>
-                        <div>
-                          <h3>{b.name}</h3>
-                          <div className="meta">
-                            {b.dept && <span className="tag dept">{b.dept}</span>}
-                            <span className="tag day-tag">{activeDay}</span>
-                          </div>
-                        </div>
-                        {!!b.count && (
-                          <div className="cnt-b">
-                            {b.count}<span>students</span>
-                          </div>
-                        )}
-                      </header>
-
-                      <div className="rows">
-                        {b.dayRows.map((r, ri) => (
-                          <div className="srow day-srow" key={ri}>
-                            <div className="day-time-block">
-                              <div className="time-val">{r.time}</div>
-                              {r.slot && <span className="slot-badge">Slot {r.slot}</span>}
-                            </div>
-                            <div className="day-details">
-                              <div className="subj">{r.subject}</div>
-                              <div className="who">
-                                <div>
-                                  <span className="lbl m">Main</span>
-                                  <span className="m">{r.trainer}</span>
-                                </div>
-                                {r.support && r.support !== '—' && (
-                                  <div>
-                                    <span className="lbl s">Support</span>
-                                    <span className="s">{r.support}</span>
-                                  </div>
-                                )}
-                              </div>
-                              {r.venue && (
-                                <div className="day-venue-tag">
-                                  <PinIcon />
-                                  <span>{r.venue}</span>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </article>
-                  ))}
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-      ) : (
-        /* Timeline Mode */
+      {/* Main Content Area: Timeline mode (primary) or Batch mode */}
+      {mode === 'timeline' ? (
         <div className="daywise-timeline-mode">
           <div className="timeline-stream">
             {timelineSlots.map((slot) => {
@@ -354,6 +289,78 @@ export default function DayWiseView({ data, selectedDay, onSelectDay, query, onQ
               );
             })}
           </div>
+        </div>
+      ) : (
+        /* Batch Mode */
+        <div className="daywise-batch-mode">
+          {filterDayBatches(currentStats.activeBatches).length === 0 ? (
+            <p className="empty">
+              {q ? `No batches or sessions match “${q}” on ${activeDay}.` : `No academic sessions scheduled for ${activeDay}.`}
+            </p>
+          ) : (
+            filterDayBatches(currentStats.activeBatches).map((g, gi) => (
+              <div className="group rv" key={g.group}>
+                <div className="group-head">
+                  <span className={`yr ${gi === 0 ? 'hl' : ''}`}>{g.group}</span>
+                  <span className="rule" />
+                  <span className="cnt">{g.batches.length} {g.batches.length > 1 ? 'batches' : 'batch'} active</span>
+                </div>
+
+                <div className="grid-cards">
+                  {g.batches.map(b => (
+                    <article className="bcard day-bcard rv" key={b.id}>
+                      <header>
+                        <div>
+                          <h3>{b.name}</h3>
+                          <div className="meta">
+                            {b.dept && <span className="tag dept">{b.dept}</span>}
+                            <span className="tag day-tag">{activeDay}</span>
+                          </div>
+                        </div>
+                        {!!b.count && (
+                          <div className="cnt-b">
+                            {b.count}<span>students</span>
+                          </div>
+                        )}
+                      </header>
+
+                      <div className="rows">
+                        {b.dayRows.map((r, ri) => (
+                          <div className="srow day-srow" key={ri}>
+                            <div className="day-time-block">
+                              <div className="time-val">{r.time}</div>
+                              {r.slot && <span className="slot-badge">Slot {r.slot}</span>}
+                            </div>
+                            <div className="day-details">
+                              <div className="subj">{r.subject}</div>
+                              <div className="who">
+                                <div>
+                                  <span className="lbl m">Main</span>
+                                  <span className="m">{r.trainer}</span>
+                                </div>
+                                {r.support && r.support !== '—' && (
+                                  <div>
+                                    <span className="lbl s">Support</span>
+                                    <span className="s">{r.support}</span>
+                                  </div>
+                                )}
+                              </div>
+                              {r.venue && (
+                                <div className="day-venue-tag">
+                                  <PinIcon />
+                                  <span>{r.venue}</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              </div>
+            ))
+          )}
         </div>
       )}
     </div>
