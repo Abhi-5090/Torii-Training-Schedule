@@ -37,7 +37,9 @@ export default function Login() {
     <div className="login-shell">
       <div className="login-card">
         <div className="login-mark">
-          <img src={LOGO} alt="Torii" />
+          <div className="login-logo-badge">
+            <img src={LOGO} alt="Torii" />
+          </div>
           <ThemeButton />
         </div>
 
