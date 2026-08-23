@@ -58,6 +58,7 @@ body{margin:0; color:var(--ink); font-family:'Inter',system-ui,sans-serif; -webk
   padding:11px 22px; border-radius:999px; cursor:pointer; display:inline-flex; gap:8px; align-items:center; transition:color .25s; position:relative; z-index:2; white-space:nowrap;}
 .seg .pill{position:absolute; top:5px; bottom:5px; border-radius:999px; z-index:1; transition:transform .34s cubic-bezier(.5,.05,.2,1), background .34s, width .34s;}
 .seg[data-view="schedule"] .pill{background:linear-gradient(135deg,var(--orange),var(--orange-deep)); box-shadow:0 8px 18px -8px rgba(241,93,35,.7)}
+.seg[data-view="daywise"] .pill{background:linear-gradient(135deg,#FA7238,var(--orange-deep)); box-shadow:0 8px 18px -8px rgba(241,93,35,.7)}
 .seg[data-view="trainer"] .pill{background:var(--pill-ink-bg); box-shadow:0 8px 18px -10px rgba(20,20,20,.8)}
 .seg[data-view="trainer"] button.on{color:var(--pill-ink-tx)}
 .seg[data-view="venue"] .pill{background:linear-gradient(135deg,var(--orange-deep),var(--orange-burnt)); box-shadow:0 8px 18px -8px rgba(184,56,14,.7)}
@@ -71,6 +72,7 @@ body{margin:0; color:var(--ink); font-family:'Inter',system-ui,sans-serif; -webk
 .search input{font-family:'Inter'; font-size:14px; border:1px solid var(--line); background:var(--card); border-radius:999px; padding:10px 16px 10px 38px; width:240px; outline:none; transition:.18s; color:var(--ink)}
 .search input:focus{border-color:var(--orange); box-shadow:0 0 0 3px var(--orange-soft)}
 .search svg{position:absolute; left:13px; top:50%; transform:translateY(-50%); width:16px; height:16px; color:var(--muted)}
+
 .panel{display:none}
 .panel.show{display:block}
 .sec-head{display:flex; align-items:baseline; gap:14px; margin:4px 0 20px}
@@ -392,6 +394,100 @@ html[data-theme="dark"] .theme-btn .moon{opacity:0; transform:rotate(90deg) scal
 .seg button{transition:color .25s, transform .18s var(--ease)}
 .seg button:active{transform:scale(.97)}
 
+/* ── Day-Wise View ──────────────────────────────────────── */
+.daywise-view{margin-top:4px}
+.daywise-subbar{display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px; margin-bottom:20px;
+  background:var(--card); border:1px solid var(--line); border-radius:18px; padding:12px 16px; box-shadow:var(--shadow-sm)}
+.daywise-chips{display:flex; gap:8px; flex-wrap:wrap; align-items:center}
+.day-chip{display:inline-flex; flex-direction:column; align-items:center; justify-content:center;
+  background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:8px 16px; cursor:pointer;
+  transition:all .2s var(--ease); text-align:center; color:var(--ink-2)}
+.day-chip:hover{border-color:var(--orange); background:var(--orange-tint); color:var(--orange-deep); transform:translateY(-1px)}
+.day-chip.on{background:linear-gradient(135deg,var(--orange),var(--orange-deep)); border-color:transparent;
+  box-shadow:0 6px 14px -6px rgba(241,93,35,.8); color:#fff; transform:translateY(-1px)}
+.day-chip .day-name{font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:13.5px; line-height:1.2}
+.day-chip .day-badge{font-family:'JetBrains Mono',monospace; font-size:10px; font-weight:600; opacity:.85; margin-top:2px}
+.day-chip.on .day-badge{color:#FFE7DC}
+.daywise-actions{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
+.mode-toggle{display:inline-flex; background:var(--surface); border:1px solid var(--line); border-radius:999px; padding:3px}
+.mode-btn{display:inline-flex; align-items:center; gap:6px; font-family:'Space Grotesk',sans-serif; font-size:12.5px; font-weight:600;
+  border:0; background:transparent; color:var(--muted); padding:6px 14px; border-radius:999px; cursor:pointer; transition:.18s}
+.mode-btn svg{width:14px; height:14px}
+.mode-btn:hover{color:var(--ink)}
+.mode-btn.on{background:var(--card); color:var(--orange-deep); box-shadow:0 2px 8px -2px rgba(20,20,20,.15); font-weight:700}
+html[data-theme="dark"] .mode-btn.on{background:var(--line); color:var(--orange)}
+.day-export-btn{display:inline-flex; align-items:center; gap:7px; font-family:'Space Grotesk',sans-serif; font-size:12.5px; font-weight:600;
+  background:var(--surface); border:1px solid var(--line); color:var(--ink-2); padding:7px 14px; border-radius:999px; cursor:pointer;
+  transition:all .18s var(--ease)}
+.day-export-btn svg{width:14px; height:14px; color:var(--orange)}
+.day-export-btn:hover{border-color:var(--orange); background:var(--orange-tint); color:var(--orange-deep); transform:translateY(-1px)}
+.daywise-metrics{display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:28px}
+.dm-card{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:14px 18px; box-shadow:var(--shadow-sm);
+  display:flex; flex-direction:column; position:relative; overflow:hidden}
+.dm-card::before{content:""; position:absolute; left:0; top:0; bottom:0; width:3.5px; background:var(--orange)}
+.dm-num{font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:24px; color:var(--orange); line-height:1}
+.dm-lbl{font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin-top:6px}
+
+/* Day Batch Cards */
+.day-bcard{border-color:var(--line)}
+.day-tag{background:var(--orange-soft); color:var(--orange-burnt); border:1px solid var(--support-bd)}
+.day-srow{display:grid; grid-template-columns:130px 1fr; gap:12px; padding:12px 14px}
+.day-time-block{display:flex; flex-direction:column; gap:4px}
+.day-time-block .time-val{font-family:'JetBrains Mono',monospace; font-size:11.5px; font-weight:600; color:var(--orange-deep); line-height:1.3}
+.slot-badge{display:inline-block; align-self:flex-start; font-family:'JetBrains Mono',monospace; font-size:9.5px; font-weight:700;
+  text-transform:uppercase; background:var(--orange-tint); color:var(--orange-deep); border:1px solid var(--orange-soft);
+  padding:2px 7px; border-radius:999px}
+.day-details .subj{font-size:15px; font-weight:700; color:var(--ink); margin-bottom:4px}
+.day-venue-tag{display:inline-flex; align-items:center; gap:5px; font-size:11.5px; font-weight:600; color:var(--ink-2);
+  margin-top:6px; background:var(--surface); border:1px solid var(--line-2); padding:3px 9px; border-radius:8px}
+.day-venue-tag svg{width:13px; height:13px; color:var(--orange)}
+
+/* Timeline Stream */
+.timeline-stream{display:flex; flex-direction:column; gap:18px}
+.timeline-slot-row{background:var(--card); border:1px solid var(--line); border-radius:18px; padding:18px 22px; box-shadow:var(--shadow-sm);
+  display:grid; grid-template-columns:190px 1fr; gap:20px; align-items:start; transition:border-color .2s}
+.timeline-slot-row:hover{border-color:var(--orange-soft)}
+.timeline-slot-row.is-lunch{background:linear-gradient(135deg,var(--surface),var(--card))}
+.slot-timeline-header{display:flex; flex-direction:column; gap:6px; border-right:1px solid var(--line-2); padding-right:16px}
+.slot-pill{align-self:flex-start; font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:13px; letter-spacing:.06em;
+  text-transform:uppercase; background:linear-gradient(135deg,var(--orange),var(--orange-deep)); color:#fff; padding:4px 12px; border-radius:999px}
+.slot-time-text{font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:600; color:var(--ink-2)}
+.slot-cnt-badge{font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:600; color:var(--orange-deep)}
+.slot-session-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(min(280px,100%),1fr)); gap:14px}
+.slot-session-card{background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:14px 16px; display:flex; flex-direction:column; gap:8px}
+.slot-session-card:hover{border-color:var(--orange)}
+.sess-top{display:flex; justify-content:space-between; align-items:flex-start; gap:8px; flex-wrap:wrap}
+.sess-batch{display:flex; align-items:center; gap:7px; flex-wrap:wrap; font-size:13.5px}
+.sess-group-tag{font-family:'JetBrains Mono',monospace; font-size:10px; font-weight:700; text-transform:uppercase;
+  background:var(--pill-ink-bg); color:var(--pill-ink-tx); padding:2px 7px; border-radius:6px}
+.sess-venue{display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:600; color:var(--muted)}
+.sess-venue svg{width:12px; height:12px; color:var(--orange)}
+.sess-subject{font-family:'Space Grotesk',sans-serif; font-size:15px; font-weight:700; color:var(--ink)}
+.sess-mentors{display:flex; flex-direction:column; gap:3px; font-size:12px; color:var(--muted); margin-top:2px}
+.mentor-row{display:flex; align-items:center; gap:6px}
+.m-name{color:var(--orange-deep); font-weight:700}
+.s-name{color:var(--orange-burnt); font-weight:600}
+.timeline-lunch-card{display:flex; align-items:center; gap:16px; background:var(--lunch-bg); color:var(--lunch-tx);
+  border-radius:14px; padding:16px 20px}
+.timeline-lunch-card .lunch-icon{font-size:26px}
+.timeline-lunch-card h4{margin:0 0 3px; font-family:'Space Grotesk',sans-serif; font-size:16px; font-weight:700; color:#fff}
+.timeline-lunch-card p{margin:0; font-size:12px; opacity:.85}
+.slot-free-card{background:var(--free-bg); border:1.5px dashed var(--line); border-radius:12px; padding:14px 18px;
+  color:var(--muted); font-size:12.5px; font-style:italic}
+
+@media(max-width:860px){
+  .timeline-slot-row{grid-template-columns:1fr; gap:14px}
+  .slot-timeline-header{border-right:none; border-bottom:1px solid var(--line-2); padding-right:0; padding-bottom:10px; flex-direction:row; align-items:center; justify-content:space-between}
+  .daywise-metrics{grid-template-columns:repeat(2,1fr)}
+}
+@media(max-width:640px){
+  .daywise-subbar{flex-direction:column; align-items:stretch}
+  .daywise-chips{overflow-x:auto; flex-wrap:nowrap; padding-bottom:4px; -webkit-overflow-scrolling:touch}
+  .day-chip{flex-shrink:0; padding:6px 12px}
+  .day-srow{grid-template-columns:1fr; gap:8px}
+  .daywise-actions{justify-content:space-between}
+}
+
 @media(max-width:820px){
   .theme-btn{position:static; margin-bottom:18px; align-self:flex-start}
   .hero-inner{display:flex; flex-direction:column; align-items:flex-start}
@@ -401,3 +497,4 @@ html[data-theme="dark"] .theme-btn .moon{opacity:0; transform:rotate(90deg) scal
   *,*::before,*::after{animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important}
   .rv,.hero,.stats,.control,.sec-head,.seg .pill{opacity:1 !important}
 }
+

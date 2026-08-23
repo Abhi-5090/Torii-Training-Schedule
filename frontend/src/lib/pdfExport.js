@@ -602,3 +602,112 @@ export function exportAllTrainersPDF(scheduleData) {
   addDocFooter(doc);
   doc.save('Torii_Consolidated_Trainers_Schedule.pdf');
 }
+
+/* ───────────────────────────────────────────────────────────────────────────
+   4. EXPORT SINGLE DAY SCHEDULE PDF
+   ─────────────────────────────────────────────────────────────────────────── */
+export function exportDayPDF(data, dayName) {
+  const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+  const dayIdx = data.days.indexOf(dayName);
+
+  addDocHeader(doc, `Daily Academic Schedule: ${dayName}`, 'Official Day-Wise Training & Hall Deployment Record');
+
+  // Collect all sessions for this day
+  const rows = [];
+  let totalBatches = 0;
+  const venuesSet = new Set();
+  const trainersSet = new Set();
+
+  for (const group of data.groups) {
+    for (const b of group.batches) {
+      const dayRows = (b.rows || []).filter(r => dayIdx !== -1 && r.dayIndexes && r.dayIndexes.includes(dayIdx));
+      if (dayRows.length > 0) {
+        totalBatches++;
+        for (const r of dayRows) {
+          if (r.venue) venuesSet.add(r.venue);
+          (r.mainList || []).forEach(t => trainersSet.add(t));
+          (r.supportList || []).forEach(t => trainersSet.add(t));
+
+          rows.push([
+            group.group,
+            b.name + (b.dept ? `\n[${b.dept}]` : ''),
+            r.time + (r.slot ? `\n(Slot ${r.slot})` : ''),
+            r.subject,
+            r.venue || '—',
+            r.trainer || 'To be assigned',
+            r.support && r.support !== '—' ? r.support : '—',
+            b.count ? `${b.count}` : '—',
+          ]);
+        }
+      }
+    }
+  }
+
+  // Summary Metrics Bar
+  autoTable(doc, {
+    startY: 48,
+    margin: { left: 14, right: 14 },
+    theme: 'plain',
+    styles: { fontSize: 8.5, cellPadding: 2.5, font: 'helvetica' },
+    body: [[
+      `Day: ${dayName}`,
+      `Active Batches: ${totalBatches}`,
+      `Total Sessions: ${rows.length}`,
+      `Mentors on Duty: ${trainersSet.size}`,
+      `Halls in Use: ${venuesSet.size}`,
+    ]],
+    didParseCell: (dataCell) => {
+      dataCell.cell.styles.fillColor = ACCENT_BG;
+      dataCell.cell.styles.textColor = BRAND_ORANGE;
+      dataCell.cell.styles.fontStyle = 'bold';
+      dataCell.cell.styles.halign = 'center';
+    },
+  });
+
+  if (rows.length === 0) {
+    doc.setFont('helvetica', 'italic');
+    doc.setFontSize(11);
+    doc.setTextColor(...MUTED_INK);
+    doc.text(`No academic sessions scheduled for ${dayName}.`, 14, doc.lastAutoTable.finalY + 15);
+  } else {
+    autoTable(doc, {
+      startY: doc.lastAutoTable.finalY + 6,
+      margin: { left: 14, right: 14 },
+      head: [['Year Group', 'Batch / Dept', 'Time & Slots', 'Subject', 'Training Hall', 'Main Mentor(s)', 'Support Mentor(s)', 'Students']],
+      body: rows,
+      theme: 'grid',
+      headStyles: {
+        fillColor: DARK_INK,
+        textColor: [255, 255, 255],
+        fontStyle: 'bold',
+        fontSize: 8.5,
+        halign: 'center',
+      },
+      styles: {
+        font: 'helvetica',
+        fontSize: 7.5,
+        cellPadding: 2.2,
+        valign: 'middle',
+        lineColor: LINE_BORDER,
+        lineWidth: 0.15,
+      },
+      columnStyles: {
+        0: { fontStyle: 'bold', cellWidth: 28, halign: 'center' },
+        1: { fontStyle: 'bold', cellWidth: 40 },
+        2: { halign: 'center', cellWidth: 36 },
+        3: { fontStyle: 'bold', cellWidth: 38 },
+        4: { halign: 'center', cellWidth: 36 },
+        5: { cellWidth: 38 },
+        6: { cellWidth: 34 },
+        7: { halign: 'center', cellWidth: 18 },
+      },
+      alternateRowStyles: {
+        fillColor: LIGHT_GREY,
+      },
+    });
+  }
+
+  addDocFooter(doc);
+  doc.save(`Torii_Schedule_${dayName}.pdf`);
+}
+

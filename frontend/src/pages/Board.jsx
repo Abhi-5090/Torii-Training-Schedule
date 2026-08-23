@@ -10,13 +10,15 @@ import BatchCard from '../components/BatchCard.jsx';
 import SoonCard from '../components/SoonCard.jsx';
 import PeriodGrid, { Counts, freeAllDay, dayShort } from '../components/PeriodGrid.jsx';
 import ActivityModal from '../components/ActivityModal.jsx';
-import { CalendarIcon, PersonIcon, BuildingIcon, SearchIcon } from '../components/Icons.jsx';
+import DayWiseView from '../components/DayWiseView.jsx';
+import { CalendarIcon, CalendarDayIcon, PersonIcon, BuildingIcon, SearchIcon } from '../components/Icons.jsx';
 
 /* loading dwell, ms — the same beats the original board used */
 const D_VIEW = 900, D_FILTER = 620, D_SEARCH = 460;
 
 const VIEWS = {
   schedule: { msg: 'Loading class schedule', n: 3, label: 'Overall Schedule', Icon: CalendarIcon },
+  daywise:  { msg: 'Loading day-wise schedule', n: 3, label: 'Day Wise Schedule', Icon: CalendarDayIcon },
   trainer:  { msg: 'Loading trainer grids',  n: 2, label: 'Trainer Schedule', Icon: PersonIcon },
   venue:    { msg: 'Loading hall occupancy', n: 2, label: 'Venue Schedule',   Icon: BuildingIcon },
 };
@@ -38,6 +40,7 @@ export default function Board({ admin }) {
     history.replaceState(null, '', url);
   };
   const [dayFilter, setDayFilter] = useState('All');
+  const [dayWiseDay, setDayWiseDay] = useState('Monday');
   const [query, setQuery] = useState('');
 
   /* `dwell` holds the skeleton up for a beat after every change, the way the
@@ -47,6 +50,17 @@ export default function Board({ admin }) {
 
   const refresh = () => api.schedule().then(setData);
   useEffect(() => { refresh().catch(e => setError(e.message)); }, []);
+
+  useEffect(() => {
+    if (data?.days?.length) {
+      const today = new Intl.DateTimeFormat('en-US', { weekday: 'long' }).format(new Date());
+      if (data.days.includes(today)) {
+        setDayWiseDay(today);
+      } else if (!data.days.includes(dayWiseDay)) {
+        setDayWiseDay(data.days[0]);
+      }
+    }
+  }, [data]);
 
   useEffect(() => { document.body.classList.add('boot'); }, []);
 
@@ -123,11 +137,11 @@ export default function Board({ admin }) {
               ))}
             </div>
           )}
-          {view === 'trainer' && (
+          {(view === 'daywise' || view === 'trainer') && (
             <div className="search">
               <SearchIcon />
               <input
-                placeholder="Search trainer…"
+                placeholder={view === 'daywise' ? 'Search batch, subject, trainer…' : 'Search trainer…'}
                 value={query}
                 onChange={e => setQuery(e.target.value)}
               />
@@ -146,6 +160,26 @@ export default function Board({ admin }) {
           </div>
           {busy ? <Loading msg={dwellMsg} n={3} />
                 : <ScheduleView data={data} dayFilter={dayFilter} />}
+        </section>
+      )}
+
+      {view === 'daywise' && (
+        <section className="panel show">
+          <div className="sec-head">
+            <h2>Day-Wise Training Schedule</h2>
+            <span className="hint">
+              Detailed classes, faculty deployment, and training halls scheduled for {dayWiseDay}
+            </span>
+          </div>
+          {busy ? <Loading msg={dwellMsg} n={3} />
+                : <DayWiseView
+                    data={data}
+                    selectedDay={dayWiseDay}
+                    onSelectDay={setDayWiseDay}
+                    query={query}
+                    onQueryChange={setQuery}
+                    admin={admin}
+                  />}
         </section>
       )}
 
@@ -184,6 +218,7 @@ export default function Board({ admin }) {
     </div>
   );
 }
+
 
 /* ── the sliding pill has to be measured, so it lives in its own component ── */
 function Segmented({ view, onChange }) {
