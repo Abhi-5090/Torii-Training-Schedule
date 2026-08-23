@@ -75,7 +75,7 @@
 
 /* ── hero: Admin sits beside the theme toggle, so the pair share a rail
       instead of the toggle being absolutely placed on its own ── */
-.hero-actions{position:absolute; top:clamp(20px,2.4vw,30px); right:clamp(20px,2.4vw,34px); z-index:5;
+.hero-actions{position:absolute; top:clamp(16px,2.4vw,30px); right:clamp(16px,2.4vw,34px); z-index:5;
   display:inline-flex; align-items:center; gap:10px}
 .hero-actions .theme-btn{position:static; top:auto; right:auto}
 
@@ -89,12 +89,14 @@
 .admin-btn:active{transform:scale(.96)}
 .admin-btn .ico{width:16px; height:16px; flex:none; stroke:currentColor; fill:none}
 
-@media(max-width:820px){
-  .hero-actions{position:static; margin-bottom:18px; align-self:flex-start}
+@media(max-width:640px){
+  .hero-actions{position:absolute; top:16px; right:16px; gap:8px}
 }
-@media(max-width:420px){
+@media(max-width:480px){
+  .hero-actions{top:14px; right:14px; gap:6px}
   .admin-btn .lbl-t, .theme-btn .lbl-t{display:none}
-  .admin-btn, .theme-btn{padding:9px 12px}
+  .admin-btn, .theme-btn{padding:8px 10px; min-height:36px}
+  .admin-btn .ico, .theme-btn .ic, .theme-btn .ic svg{width:16px; height:16px}
 }
 
 /* ═══════════ login ═══════════ */
