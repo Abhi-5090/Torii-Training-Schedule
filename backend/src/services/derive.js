@@ -118,6 +118,7 @@ export function buildSchedule({ config, groups, trainers, venues, batches, activ
       dept: b.dept || '',
       venues,
       count: b.count || 0,
+      order: Number(b.order) || 0,
       rows,
     };
   });
@@ -127,7 +128,9 @@ export function buildSchedule({ config, groups, trainers, venues, batches, activ
     .filter(g => !g.pending)
     .map(g => ({
       group: g.name,
-      batches: batchCards.filter(b => b.group === g.name),
+      batches: batchCards
+        .filter(b => b.group === g.name)
+        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0) || a.name.localeCompare(b.name)),
     }))
     .filter(g => g.batches.length);
 

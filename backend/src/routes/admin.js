@@ -271,6 +271,33 @@ router.post('/batches', wrap(async (req, res) => {
   }));
 }));
 
+router.put('/batches/reorder', wrap(async (req, res) => {
+  const items = Array.isArray(req.body?.items) ? req.body.items : [];
+  if (!items.length) return fail(res, 400, 'items array is required');
+  const ops = items.map(item => ({
+    updateOne: {
+      filter: { _id: item.id || item._id },
+      update: { $set: { order: Number(item.order) || 0 } },
+    },
+  }));
+  await Batch.bulkWrite(ops);
+  res.json({ ok: true });
+}));
+
+router.put('/batches/reorder-group', wrap(async (req, res) => {
+  const group = str(req.body?.group);
+  const orderedIds = Array.isArray(req.body?.orderedIds) ? req.body.orderedIds : [];
+  if (!orderedIds.length) return fail(res, 400, 'orderedIds array is required');
+  const ops = orderedIds.map((id, index) => ({
+    updateOne: {
+      filter: { _id: id },
+      update: { $set: { order: index } },
+    },
+  }));
+  await Batch.bulkWrite(ops);
+  res.json({ ok: true });
+}));
+
 router.put('/batches/:id', wrap(async (req, res) => {
   const batch = await Batch.findById(req.params.id);
   if (!batch) return fail(res, 404, 'Batch not found');

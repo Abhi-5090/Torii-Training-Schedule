@@ -19,6 +19,7 @@ export default function BatchesTab() {
   const [exporting, setExporting] = useState(false);
 
   const [editing, setEditing] = useState(null);   // the draft being edited, or null
+  const [arrangingGroup, setArrangingGroup] = useState(null); // active year group name in arrange modal or null
   const [error, setError] = useState('');
   const [ok, setOk] = useState('');
   const [filter, setFilter] = useState('All');
@@ -48,9 +49,20 @@ export default function BatchesTab() {
 
   const flash = msg => { setOk(msg); setError(''); setTimeout(() => setOk(''), 2600); };
 
+  const sortedBatches = useMemo(() => {
+    if (!batches) return [];
+    const groupOrderMap = new Map((groups || []).map((g, idx) => [g.name, g.order ?? idx]));
+    return [...batches].sort((a, b) => {
+      const gA = groupOrderMap.has(a.group) ? groupOrderMap.get(a.group) : 999;
+      const gB = groupOrderMap.has(b.group) ? groupOrderMap.get(b.group) : 999;
+      if (gA !== gB) return gA - gB;
+      return (a.order ?? 0) - (b.order ?? 0) || a.name.localeCompare(b.name);
+    });
+  }, [batches, groups]);
+
   const shown = useMemo(
-    () => (batches || []).filter(b => filter === 'All' || b.group === filter),
-    [batches, filter],
+    () => sortedBatches.filter(b => filter === 'All' || b.group === filter),
+    [sortedBatches, filter],
   );
 
   async function save() {
@@ -81,14 +93,79 @@ export default function BatchesTab() {
     } catch (e) { setError(e.message); }
   }
 
+  /* Moves a batch up/down within its own Year Group to determine its position in Overall Schedule */
+  async function moveWithinGroup(b, dir) {
+    const groupBatches = sortedBatches.filter(x => x.group === b.group);
+    const i = groupBatches.findIndex(x => x._id === b._id);
+    const j = i + dir;
+    if (j < 0 || j >= groupBatches.length) return;
+
+    const reordered = [...groupBatches];
+    const [target] = reordered.splice(i, 1);
+    reordered.splice(j, 0, target);
+
+    const orderedIds = reordered.map(x => x._id);
+
+    try {
+      await api.reorderGroupBatches(b.group, orderedIds);
+      await reload();
+      announceChange();
+      flash(`Updated order for ${b.group}`);
+    } catch (e) { setError(e.message); }
+  }
+
+  /* Moves a batch to the extreme top or bottom of its group */
+  async function moveBatchToEdge(groupName, bId, toTop) {
+    const groupBatches = sortedBatches.filter(x => x.group === groupName);
+    const i = groupBatches.findIndex(x => x._id === bId);
+    if (i === -1) return;
+    if (toTop && i === 0) return;
+    if (!toTop && i === groupBatches.length - 1) return;
+
+    const reordered = [...groupBatches];
+    const [target] = reordered.splice(i, 1);
+    if (toTop) reordered.unshift(target);
+    else reordered.push(target);
+
+    const orderedIds = reordered.map(x => x._id);
+
+    try {
+      await api.reorderGroupBatches(groupName, orderedIds);
+      await reload();
+      announceChange();
+      flash(`Moved "${target.name}" to ${toTop ? 'top' : 'bottom'}`);
+    } catch (e) { setError(e.message); }
+  }
+
   if (!batches || !config) return <><PageHead title="Batches & Sessions" /><Spinner /></>;
+
+  const currentArrangeGroup = arrangingGroup || (filter !== 'All' ? filter : groups[0]?.name || '');
+  const arrangeBatchesList = sortedBatches.filter(b => b.group === currentArrangeGroup);
 
   return (
     <>
       <PageHead
         title="Batches & Sessions"
-        blurb="This is the source of truth for the whole board. Enter each batch once with its weekly sessions — the trainer timetables and hall occupancy are calculated from what you put here."
+        blurb="This is the source of truth for the whole board. Enter each batch once with its weekly sessions — the trainer timetables, hall occupancy, and Overall Schedule are calculated from what you put here."
       >
+        <button
+          type="button"
+          className="btn-arrange"
+          disabled={!batches.length}
+          onClick={() => setArrangingGroup(filter !== 'All' ? filter : groups[0]?.name || '')}
+          title="Arrange how batches appear in the Overall Schedule"
+        >
+          <svg viewBox="0 0 24 24" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="8" y1="6" x2="21" y2="6" />
+            <line x1="8" y1="12" x2="21" y2="12" />
+            <line x1="8" y1="18" x2="21" y2="18" />
+            <line x1="3" y1="6" x2="3.01" y2="6" />
+            <line x1="3" y1="12" x2="3.01" y2="12" />
+            <line x1="3" y1="18" x2="3.01" y2="18" />
+          </svg>
+          Arrange Batches
+        </button>
+
         <button
           type="button"
           className="btn-pdf"
@@ -122,13 +199,24 @@ export default function BatchesTab() {
       )}
 
       <div className="card">
-        <div className="card-row" style={{ marginBottom: 18 }}>
+        <div className="card-row" style={{ marginBottom: 18, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
           <Field label="Filter by year">
             <select value={filter} onChange={e => setFilter(e.target.value)}>
               <option value="All">All year groups</option>
               {groups.map(g => <option key={g._id} value={g.name}>{g.name}</option>)}
             </select>
           </Field>
+
+          {groups.length > 0 && batches.length > 0 && (
+            <button
+              type="button"
+              className="btn btn-ghost btn-sm"
+              style={{ fontSize: 13, alignSelf: 'flex-end', marginBottom: 2 }}
+              onClick={() => setArrangingGroup(filter !== 'All' ? filter : groups[0]?.name || '')}
+            >
+              ↕ Reorder batches in schedule
+            </button>
+          )}
         </div>
 
         {!shown.length ? (
@@ -145,17 +233,52 @@ export default function BatchesTab() {
             <table className="tbl">
               <thead>
                 <tr>
-                  <th>Batch</th><th>Year</th><th>Sessions</th><th>Halls</th><th>Students</th><th className="act">Actions</th>
+                  <th style={{ width: 95 }}>Order</th>
+                  <th>Batch</th>
+                  <th>Year</th>
+                  <th>Sessions</th>
+                  <th>Halls</th>
+                  <th>Students</th>
+                  <th className="act">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {shown.map(b => {
+                  const groupBatches = sortedBatches.filter(x => x.group === b.group);
+                  const groupIndex = groupBatches.findIndex(x => x._id === b._id);
                   const sess = b.sessions || [];
                   const unstaffed = sess.filter(s => !(s.mainTrainers || []).length).length;
                   const noHall = sess.filter(s => !s.venue).length;
                   const halls = [...new Set(sess.map(s => s.venue).filter(Boolean))];
                   return (
                     <tr key={b._id}>
+                      <td>
+                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                          <span className="pill-tag" style={{ minWidth: 26, textAlign: 'center', padding: '2px 6px', fontSize: 11, fontWeight: 700 }}>
+                            #{groupIndex + 1}
+                          </span>
+                          <button
+                            className="btn btn-ghost btn-sm"
+                            style={{ padding: '4px 6px', minHeight: 26, minWidth: 24, lineHeight: 1 }}
+                            disabled={groupIndex === 0}
+                            onClick={() => moveWithinGroup(b, -1)}
+                            title="Move up in Overall Schedule"
+                            aria-label="Move up"
+                          >
+                            ↑
+                          </button>
+                          <button
+                            className="btn btn-ghost btn-sm"
+                            style={{ padding: '4px 6px', minHeight: 26, minWidth: 24, lineHeight: 1 }}
+                            disabled={groupIndex === groupBatches.length - 1}
+                            onClick={() => moveWithinGroup(b, 1)}
+                            title="Move down in Overall Schedule"
+                            aria-label="Move down"
+                          >
+                            ↓
+                          </button>
+                        </div>
+                      </td>
                       <td className="nm">
                         {b.name}
                         {b.dept && <div className="muted" style={{ fontWeight: 400, fontSize: 12, marginTop: 3 }}>{b.dept}</div>}
@@ -182,6 +305,125 @@ export default function BatchesTab() {
           </div>
         )}
       </div>
+
+      {/* ── Arrange Batches Modal ── */}
+      {arrangingGroup && (
+        <Modal
+          wide
+          title="Arrange Batches in Overall Schedule"
+          sub="Set the exact sequence in which batch cards appear on the board. Changes are applied live to the Overall Schedule."
+          onClose={() => setArrangingGroup(null)}
+          footer={
+            <button className="btn btn-primary" onClick={() => setArrangingGroup(null)}>
+              Done
+            </button>
+          }
+        >
+          <div className="arrange-container">
+            <div>
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--muted)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '.06em' }}>
+                Select Year Group:
+              </label>
+              <div className="arrange-group-tabs">
+                {groups.map(g => (
+                  <button
+                    key={g._id}
+                    type="button"
+                    className={`arrange-group-tab ${g.name === currentArrangeGroup ? 'on' : ''}`}
+                    onClick={() => setArrangingGroup(g.name)}
+                  >
+                    {g.name} ({sortedBatches.filter(b => b.group === g.name).length})
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {!arrangeBatchesList.length ? (
+              <EmptyState title={`No batches in ${currentArrangeGroup}`}>
+                Add batches to this year group to arrange them.
+              </EmptyState>
+            ) : (
+              <>
+                <div className="arrange-list">
+                  {arrangeBatchesList.map((b, idx) => (
+                    <div className="arrange-row" key={b._id}>
+                      <div className="arrange-row-left">
+                        <div className="arrange-num">#{idx + 1}</div>
+                        <div className="arrange-row-info">
+                          <div className="arrange-row-title">{b.name}</div>
+                          <div className="arrange-row-meta">
+                            {b.dept && <span><b>Dept:</b> {b.dept}</span>}
+                            <span><b>Sessions:</b> {(b.sessions || []).length}</span>
+                            {b.count > 0 && <span><b>Students:</b> {b.count}</span>}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="arrange-row-actions">
+                        <button
+                          type="button"
+                          className="btn btn-ghost btn-sm arrange-btn-action"
+                          disabled={idx === 0}
+                          onClick={() => moveBatchToEdge(currentArrangeGroup, b._id, true)}
+                          title="Move to Top"
+                        >
+                          ⤒ Top
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-ghost btn-sm arrange-btn-action"
+                          disabled={idx === 0}
+                          onClick={() => moveWithinGroup(b, -1)}
+                          title="Move Up"
+                        >
+                          ↑ Up
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-ghost btn-sm arrange-btn-action"
+                          disabled={idx === arrangeBatchesList.length - 1}
+                          onClick={() => moveWithinGroup(b, 1)}
+                          title="Move Down"
+                        >
+                          ↓ Down
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-ghost btn-sm arrange-btn-action"
+                          disabled={idx === arrangeBatchesList.length - 1}
+                          onClick={() => moveBatchToEdge(currentArrangeGroup, b._id, false)}
+                          title="Move to Bottom"
+                        >
+                          ⤓ Bottom
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="arrange-preview-box">
+                  <div className="arrange-preview-head">
+                    <span className="arrange-preview-title">Board Grid Preview: {currentArrangeGroup}</span>
+                    <span style={{ fontSize: 11, color: 'var(--muted)' }}>Left-to-right order as rendered on the public board</span>
+                  </div>
+                  <div className="arrange-preview-grid">
+                    {arrangeBatchesList.map((b, i) => (
+                      <div className="arrange-preview-card" key={b._id}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                          <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--orange)' }}>#{i + 1}</span>
+                          {b.dept && <span style={{ fontSize: 10, color: 'var(--muted)' }}>{b.dept}</span>}
+                        </div>
+                        <strong>{b.name}</strong>
+                        <span>{(b.sessions || []).length} sessions</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        </Modal>
+      )}
 
       {editing && (
         <Modal

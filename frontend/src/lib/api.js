@@ -56,6 +56,10 @@ export const api = {
   update: (kind, id, body) => call(`/admin/${kind}/${id}`, { method: 'PUT', body }),
   remove: (kind, id) => call(`/admin/${kind}/${id}`, { method: 'DELETE' }),
 
+  reorderBatches: (items) => call('/admin/batches/reorder', { method: 'PUT', body: { items } }),
+  reorderGroupBatches: (group, orderedIds) =>
+    call('/admin/batches/reorder-group', { method: 'PUT', body: { group, orderedIds } }),
+
   /* what a trainer is doing during a period that isn't a class */
   setActivity: (payload, day, slot, kind, label) => {
     // support both legacy setActivity(trainer, day, slot, kind, label) and setActivity({ trainer, day, slots, kind, label })
