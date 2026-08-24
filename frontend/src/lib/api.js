@@ -56,9 +56,10 @@ export const api = {
   update: (kind, id, body) => call(`/admin/${kind}/${id}`, { method: 'PUT', body }),
   remove: (kind, id) => call(`/admin/${kind}/${id}`, { method: 'DELETE' }),
 
-  reorderBatches: (items) => call('/admin/batches/reorder', { method: 'PUT', body: { items } }),
+  reorderBatches: items =>
+    Promise.all(items.map(item => call(`/admin/batches/${item.id || item._id}`, { method: 'PUT', body: { order: Number(item.order) || 0 } }))),
   reorderGroupBatches: (group, orderedIds) =>
-    call('/admin/batches/reorder-group', { method: 'PUT', body: { group, orderedIds } }),
+    Promise.all(orderedIds.map((id, index) => call(`/admin/batches/${id}`, { method: 'PUT', body: { order: index } }))),
 
   /* what a trainer is doing during a period that isn't a class */
   setActivity: (payload, day, slot, kind, label) => {

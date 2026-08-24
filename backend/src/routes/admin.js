@@ -72,6 +72,7 @@ router.post('/groups', wrap(async (req, res) => {
 }));
 
 router.put('/groups/:id', wrap(async (req, res) => {
+  if (!mongoose.isValidObjectId(req.params.id)) return fail(res, 404, 'Year group not found');
   const group = await YearGroup.findById(req.params.id);
   if (!group) return fail(res, 404, 'Year group not found');
 
@@ -91,6 +92,7 @@ router.put('/groups/:id', wrap(async (req, res) => {
 }));
 
 router.delete('/groups/:id', wrap(async (req, res) => {
+  if (!mongoose.isValidObjectId(req.params.id)) return fail(res, 404, 'Year group not found');
   const group = await YearGroup.findById(req.params.id);
   if (!group) return fail(res, 404, 'Year group not found');
 
@@ -246,6 +248,7 @@ router.get('/batches', wrap(async (_req, res) => {
 }));
 
 router.get('/batches/:id', wrap(async (req, res) => {
+  if (!mongoose.isValidObjectId(req.params.id)) return fail(res, 404, 'Batch not found');
   const batch = await Batch.findById(req.params.id).lean();
   if (!batch) return fail(res, 404, 'Batch not found');
   res.json(batch);
@@ -299,6 +302,7 @@ router.put('/batches/reorder-group', wrap(async (req, res) => {
 }));
 
 router.put('/batches/:id', wrap(async (req, res) => {
+  if (!mongoose.isValidObjectId(req.params.id)) return fail(res, 404, 'Batch not found');
   const batch = await Batch.findById(req.params.id);
   if (!batch) return fail(res, 404, 'Batch not found');
 
@@ -325,6 +329,7 @@ router.put('/batches/:id', wrap(async (req, res) => {
 }));
 
 router.delete('/batches/:id', wrap(async (req, res) => {
+  if (!mongoose.isValidObjectId(req.params.id)) return fail(res, 404, 'Batch not found');
   const batch = await Batch.findByIdAndDelete(req.params.id);
   if (!batch) return fail(res, 404, 'Batch not found');
   res.json({ ok: true });
