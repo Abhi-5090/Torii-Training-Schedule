@@ -1,7 +1,7 @@
 /**
  * Troy RAG AI Schedule Assistant
- * Combines structured schedule graph querying, intent classification,
- * and semantic retrieval (RAG) over all master database facts.
+ * Professional, institutional schedule intelligence engine.
+ * Delivers clear, structured, and accurate responses directly from the live database.
  */
 
 // ── Text Normalization & Cleaning ──
@@ -91,6 +91,7 @@ function buildKnowledgeBase(scheduleData) {
   // Batch Session Facts
   batches.forEach(b => {
     (b.rows || []).forEach(r => {
+      const supportText = r.support && r.support !== '—' ? r.support : 'None';
       facts.push({
         type: 'session',
         entity: b.name,
@@ -104,7 +105,7 @@ function buildKnowledgeBase(scheduleData) {
         trainers: r.trainer,
         mainTrainers: r.mainList || [],
         supportTrainers: r.supportList || [],
-        text: `Batch ${b.name} (${b.group}${b.dept ? ` · ${b.dept}` : ''}) has ${r.subject} on ${r.day} from ${r.time} (Slot ${r.slot}) in ${r.venue || 'TBA'} taught by ${r.trainer}${r.support && r.support !== '—' ? ` (Support: ${r.support})` : ''}.`,
+        text: `Batch ${b.name} (${b.group}${b.dept ? ` · ${b.dept}` : ''}) has ${r.subject} on ${r.day} from ${r.time} (Slot ${r.slot}) in ${r.venue || 'TBA'} with Lead Trainer: ${r.trainer} and Support Mentor: ${supportText}.`,
       });
     });
   });
@@ -119,7 +120,7 @@ function buildKnowledgeBase(scheduleData) {
       totalTrainings: t.totalTrainings || 0,
       mainCount: t.mainCount || 0,
       supportCount: t.supportCount || 0,
-      text: `Trainer ${t.name} is scheduled for ${t.totalTrainings || 0} training sessions per week (Lead: ${t.mainCount || 0}, Support: ${t.supportCount || 0})${t.email ? ` with email ${t.email}` : ''}.`,
+      text: `Trainer ${t.name} handles ${t.totalTrainings || 0} weekly training sessions (Lead: ${t.mainCount || 0}, Support: ${t.supportCount || 0})${t.email ? ` [${t.email}]` : ''}.`,
     });
   });
 
@@ -129,7 +130,7 @@ function buildKnowledgeBase(scheduleData) {
       type: 'venue',
       entity: v.name,
       capacity: v.capacity || 0,
-      text: `Training venue ${v.name} has a seating capacity of ${v.capacity || 60} seats.`,
+      text: `Training Venue ${v.name} has a capacity of ${v.capacity || 60} seats.`,
     });
   });
 
@@ -141,12 +142,12 @@ function buildKnowledgeBase(scheduleData) {
  */
 export function answerScheduleQuery(userQuery, scheduleData) {
   if (!scheduleData) {
-    return "I'm currently connecting to the master timetable database. Please ask me again in a moment!";
+    return "Connecting to the live timetable database. Please try again in a moment.";
   }
 
   const rawQ = String(userQuery || '').trim();
   if (!rawQ) {
-    return "How can I help you today? You can ask me about any trainer, batch, hall, subject, or daily timetable!";
+    return "Please specify a query regarding trainers, batches, training venues, subjects, or daily schedules.";
   }
 
   const slots = scheduleData.slots || scheduleData.config?.slots || [];
@@ -165,13 +166,13 @@ export function answerScheduleQuery(userQuery, scheduleData) {
   const targetDay = extractDay(rawQ, days);
   const targetSlot = extractSlot(rawQ, slots);
 
-  // ── 1. GREETINGS & SELF IDENTIFICATION ──
+  // ── 1. GREETINGS & SYSTEM OVERVIEW ──
   if (/^(hi|hello|hey|greetings|hola|namaste|yo|good\s*(morning|afternoon|evening))\b/i.test(nq)) {
-    return `Hello! 👋 I'm **Troy**, your AI schedule assistant for **Torii Training Management**.\n\nI'm trained live on our complete database containing **${batches.length} batches**, **${trainers.length} trainers**, and **${venues.length} training halls**.\n\n**Quick questions you can ask me:**\n- 🟢 *"Who is free today?"* or *"Who is free on Friday slot 2?"*\n- 👨‍🏫 *"What is Sudhir's Friday schedule?"* or *"Who teaches Python?"*\n- 🎓 *"When is Batch 1 class on Monday?"*\n- 🏢 *"Which halls are free right now?"*\n- 📅 *"Show Monday timetable"* or *"When is lunch break?"*`;
+    return `Hello. I am **Troy**, the live Schedule Assistant for **Torii Training Management**.\n\nDatabase status: **${batches.length} Batches**, **${trainers.length} Trainers**, and **${venues.length} Venues** active.\n\n**Example queries:**\n- 📅 *"Show today's schedule"* or *"Monday timetable"*\n- 🟢 *"Who is free today?"* or *"Who is free on Friday slot 2?"*\n- 👨‍🏫 *"What is Sudhir's Friday schedule?"* or *"Who teaches Python?"*\n- 🎓 *"When is Batch 1 class?"*\n- 🏢 *"Which halls are available on Wednesday?"*`;
   }
 
   if (hasAny(nq, 'who are you', 'what are you', 'your name', 'about you', 'who is troy')) {
-    return `I am **Troy**, the AI schedule assistant for the **Torii Training Management Board** at NCET.\n\nI continuously monitor the master schedule database to provide instant, 100% accurate information on:\n- 🟢 **Trainer availability & free hours**\n- 📅 **Batch timetables & halls**\n- 👨‍🏫 **Trainer assignments & workloads**\n- 🏛️ **Venue & hall occupancy**\n- ⏰ **Live daily periods & break timings**`;
+    return `I am **Troy**, the AI assistant for the **Torii Training Schedule Management System** at NCET.\n\nI provide real-time schedule information directly from the database for:\n- 📅 **Batch Timetables & Venues**\n- 👨‍🏫 **Lead Trainers & Support Mentors**\n- 🟢 **Trainer Availability & Free Periods**\n- 🏛️ **Venue Occupancy & Room Allocations**\n- ⏰ **Campus Period Timings & Breaks**`;
   }
 
   // ── 2. TRAINER AVAILABILITY & FREE TIME (INTENT: FREE_TRAINERS) ──
@@ -182,7 +183,7 @@ export function answerScheduleQuery(userQuery, scheduleData) {
   if (isFreeTrainersQuery) {
     const d = targetDay || days[0];
 
-    // Case A: Free at a specific SLOT (e.g. "Who is free today in slot 2?")
+    // Case A: Free at a specific SLOT
     if (targetSlot) {
       const freeAtSlot = [];
       const busyAtSlot = [];
@@ -196,18 +197,18 @@ export function answerScheduleQuery(userQuery, scheduleData) {
         }
       });
 
-      let res = `🟢 **Trainer Availability on ${d} at Slot ${targetSlot.number} (${targetSlot.label}):**\n\n`;
+      let res = `🟢 **Trainer Availability — ${d} (Slot ${targetSlot.number} · ${targetSlot.label})**\n\n`;
       if (freeAtSlot.length > 0) {
         res += `**Available Trainers (${freeAtSlot.length}):**\n`;
         freeAtSlot.forEach((name, i) => {
-          res += `${i + 1}. **${name}** 🟢\n`;
+          res += `${i + 1}. **${name}**\n`;
         });
       } else {
-        res += `*All trainers have classes scheduled during this period.*\n`;
+        res += `*All trainers are currently assigned to training sessions during this period.*\n`;
       }
 
       if (busyAtSlot.length > 0) {
-        res += `\n**Busy Trainers (${busyAtSlot.length}):**\n`;
+        res += `\n**Assigned Trainers (${busyAtSlot.length}):**\n`;
         busyAtSlot.forEach((b, i) => {
           res += `${i + 1}. **${b.name}** — *${b.task}*\n`;
         });
@@ -215,7 +216,7 @@ export function answerScheduleQuery(userQuery, scheduleData) {
       return res;
     }
 
-    // Case B: General Free Trainers for the Day (e.g. "Who is free today?")
+    // Case B: General Free Trainers for the Day
     const fullyFree = [];
     const partiallyFree = [];
 
@@ -241,56 +242,55 @@ export function answerScheduleQuery(userQuery, scheduleData) {
       }
     });
 
-    let res = `🟢 **Trainer Availability for ${d}:**\n\n`;
+    let res = `🟢 **Trainer Availability Overview — ${d}**\n\n`;
 
     if (fullyFree.length > 0) {
-      res += `**Fully Free All Day (No Classes):**\n`;
+      res += `**Fully Available All Day (No Assigned Sessions):**\n`;
       fullyFree.forEach((t, i) => {
-        res += `${i + 1}. **${t.name}** 🟢 ${t.email ? `*(${t.email})*` : ''}\n`;
+        res += `${i + 1}. **${t.name}** ${t.email ? `*(${t.email})*` : ''}\n`;
       });
       res += `\n`;
     }
 
     if (partiallyFree.length > 0) {
-      res += `**Partially Free (Available during specific periods):**\n`;
+      res += `**Partially Available (Free during specific periods):**\n`;
       partiallyFree.forEach(({ trainer, freePeriods }) => {
         const slotNumbers = freePeriods.map(p => `Slot ${p.slot}`).join(', ');
         res += `- **${trainer.name}**: Free during **${slotNumbers}** (${freePeriods.length} periods open)\n`;
       });
     }
 
-    res += `\n*Ask me about any specific slot (e.g. "Who is free at slot 2?") or trainer to view their detailed timeline!*`;
+    res += `\n*You may query specific slots (e.g., "Who is free at Slot 2 on ${d}?") for exact period details.*`;
     return res;
   }
 
   // ── 3. VENUE AVAILABILITY (INTENT: FREE_VENUES) ──
   if (hasAny(nq, 'free hall', 'free halls', 'free venue', 'free venues', 'empty room', 'available hall', 'available room', 'free rooms', 'which halls are free', 'which rooms are free', 'hall availability', 'venue availability')) {
     const d = targetDay || days[0];
-    let res = `🏢 **Training Hall Availability for ${d}:**\n\n`;
+    let res = `🏢 **Venue Availability — ${d}**\n\n`;
 
     venues.forEach(v => {
       const freeSlots = v.free?.[d] || [];
       if (freeSlots.length >= slots.length - 1) {
-        res += `- 🟢 **${v.name}**: **Fully Free All Day** (${v.capacity || 60} seats)\n`;
+        res += `- 🟢 **${v.name}**: **Fully Available All Day** (${v.capacity || 60} seats)\n`;
       } else if (freeSlots.length > 0) {
-        res += `- 🟡 **${v.name}**: Free during **${freeSlots.length} periods** (${freeSlots.join(', ')})\n`;
+        res += `- 🟡 **${v.name}**: Available during **${freeSlots.length} periods** (${freeSlots.join(', ')})\n`;
       } else {
-        res += `- 🔴 **${v.name}**: Fully Booked\n`;
+        res += `- 🔴 **${v.name}**: Fully Occupied\n`;
       }
     });
 
-    res += `\n*Ask me about any hall name (e.g. "Examination Block schedule") to see all classes happening there!*`;
     return res;
   }
 
   // ── 4. LUNCH BREAK & COLLEGE TIMINGS ──
   if (hasAny(nq, 'lunch', 'lunch break', 'recess', 'interval', 'break time')) {
     const lunchSlotName = slots[lunchIndex] || '11:50 – 12:40';
-    return `🍽️ **Lunch Break Details:**\n\n- **Period:** Slot ${lunchIndex + 1} (\`${lunchSlotName}\`)\n- **Description:** Campus-wide break for all students, faculty, and trainers.\n\n*(Sessions scheduled before lunch resume in Slot ${lunchIndex + 2} at the regular start time).*`;
+    return `🍽️ **Campus Lunch Break Schedule**\n\n- **Period:** Slot ${lunchIndex + 1} (\`${lunchSlotName}\`)\n- **Details:** Campus-wide break. All morning sessions conclude before Slot ${lunchIndex + 1}, and afternoon training resumes in Slot ${lunchIndex + 2}.`;
   }
 
   if (hasAny(nq, 'slots', 'periods', 'timings', 'bell schedule', 'what time does slot', 'class hours', 'time table timing')) {
-    let res = `⏰ **Master College Period Timings (${slots.length} Slots):**\n\n`;
+    let res = `⏰ **Master Period Schedule (${slots.length} Slots)**\n\n`;
     slots.forEach((s, idx) => {
       const isLunch = idx === lunchIndex;
       res += `- **Slot ${idx + 1}:** \`${s}\` ${isLunch ? '🍱 *(Lunch Break)*' : ''}\n`;
@@ -302,11 +302,11 @@ export function answerScheduleQuery(userQuery, scheduleData) {
   // ── 5. SCHEDULE CONFLICTS ──
   if (hasAny(nq, 'conflict', 'conflicts', 'double booking', 'clash', 'overlap')) {
     if (!conflicts || conflicts.length === 0) {
-      return `✅ **No Schedule Conflicts!**\n\nAll **${batches.length} batches** and **${trainers.length} trainers** have zero overlapping bookings. Every training hall and period is cleanly allocated.`;
+      return `✅ **Schedule Integrity Verified**\n\nZero scheduling conflicts detected across **${batches.length} batches**, **${trainers.length} trainers**, and **${venues.length} venues**. All room and trainer allocations are consistent.`;
     }
-    let res = `⚠️ **Detected ${conflicts.length} Schedule Conflict(s):**\n\n`;
+    let res = `⚠️ **Schedule Conflicts Detected (${conflicts.length}):**\n\n`;
     conflicts.forEach((c, idx) => {
-      res += `${idx + 1}. **${c.kind === 'trainer' ? 'Trainer Clash' : 'Hall Clash'}:** \`${c.subject}\` on **${c.day}** (${c.slot}) between **${c.batches.join('** and **')}**\n`;
+      res += `${idx + 1}. **${c.kind === 'trainer' ? 'Trainer Overlap' : 'Venue Overlap'}:** \`${c.subject}\` on **${c.day}** (${c.slot}) between **${c.batches.join('** and **')}**\n`;
     });
     return res;
   }
@@ -317,16 +317,16 @@ export function answerScheduleQuery(userQuery, scheduleData) {
     const totalSessions = batches.reduce((acc, b) => acc + (b.rows || []).length, 0);
     const activeTrainers = trainers.filter(t => (t.totalTrainings || 0) > 0).length;
 
-    let res = `📊 **Torii Master Schedule Summary:**\n\n`;
-    res += `- **Total Year Groups:** ${groups.length} active ${upcoming.length > 0 ? `(+ ${upcoming.length} upcoming)` : ''}\n`;
-    res += `- **Total Batches:** ${batches.length} batches (${totalStudents > 0 ? totalStudents.toLocaleString() + ' students' : 'enrolled'})\n`;
-    res += `- **Total Weekly Sessions:** ${totalSessions} class blocks\n`;
-    res += `- **Trainers:** ${trainers.length} registered (${activeTrainers} actively assigned)\n`;
-    res += `- **Venues/Halls:** ${venues.length} rooms\n`;
-    res += `- **Teaching Days:** ${days.length} days (${days.join(', ')})\n\n`;
+    let res = `📊 **Torii Training Program Summary**\n\n`;
+    res += `- **Year Groups:** ${groups.length} Active ${upcoming.length > 0 ? `(+ ${upcoming.length} Awaiting Schedule)` : ''}\n`;
+    res += `- **Total Batches:** ${batches.length} (${totalStudents > 0 ? totalStudents.toLocaleString() + ' Enrolled Students' : 'Configured'})\n`;
+    res += `- **Weekly Class Blocks:** ${totalSessions} Sessions\n`;
+    res += `- **Faculty / Trainers:** ${trainers.length} (${activeTrainers} Actively Assigned)\n`;
+    res += `- **Training Venues:** ${venues.length} Locations\n`;
+    res += `- **Operating Days:** ${days.join(', ')}\n\n`;
 
     if (upcoming.length > 0) {
-      res += `⏳ **Awaiting Schedule:** ${upcoming.map(u => `*${u.group}*`).join(', ')}\n`;
+      res += `⏳ **Upcoming Bands:** ${upcoming.map(u => `*${u.group}*`).join(', ')}\n`;
     }
     return res;
   }
@@ -359,52 +359,53 @@ export function answerScheduleQuery(userQuery, scheduleData) {
                 subject: r.subject,
                 time: r.time,
                 slot: r.slot,
+                slots: r.slots || [],
                 venue: r.venue,
-                role: isMain ? 'Lead Trainer' : 'Support Trainer',
+                role: isMain ? 'Lead Trainer' : 'Support Mentor',
                 mainList: r.mainList || [],
                 supportList: r.supportList || [],
+                support: r.support,
               });
             }
           }
         });
       });
 
-      let dayRes = `📋 **${matchedTrainer.name}'s Schedule for ${d}:**\n\n`;
+      // Sort chronologically by start slot
+      dayClasses.sort((a, b) => (a.slots[0] ?? 0) - (b.slots[0] ?? 0));
+
+      let dayRes = `📋 **Schedule for ${matchedTrainer.name} — ${d}**\n\n`;
 
       if (dayClasses.length > 0) {
         dayClasses.forEach((c, idx) => {
-          dayRes += `**${idx + 1}. ${c.subject}** — **${c.batch}** (${c.group}${c.dept ? ` · ${c.dept}` : ''})\n`;
-          dayRes += `   ⏰ **Time:** ${c.time} (Slot ${c.slot})\n`;
-          dayRes += `   🏛️ **Venue:** ${c.venue || 'To be assigned'}\n`;
-          dayRes += `   👨‍🏫 **Role:** **${c.role}**`;
-          if (c.mainList.length > 1) {
-            dayRes += ` *(with ${c.mainList.filter(n => n !== matchedTrainer.name).join(', ')})*`;
-          }
-          if (c.supportList.length > 0 && !c.supportList.includes(matchedTrainer.name)) {
-            dayRes += ` · *Support: ${c.supportList.join(', ')}*`;
-          }
-          dayRes += `\n\n`;
+          const supportDisplay = c.support && c.support !== '—' ? c.support : 'None';
+          dayRes += `**${idx + 1}. ${c.subject}** — **${c.batch}** *(${c.group}${c.dept ? ` · ${c.dept}` : ''})*\n`;
+          dayRes += `- ⏰ **Time:** ${c.time} *(Slot ${c.slot})*\n`;
+          dayRes += `- 🏛️ **Venue:** ${c.venue || 'To be assigned'}\n`;
+          dayRes += `- 👨‍🏫 **Lead Trainer:** ${c.mainList.join(', ')}\n`;
+          dayRes += `- 🤝 **Support Mentor:** ${supportDisplay}\n`;
+          dayRes += `- 📌 **Assigned Role:** **${c.role}**\n\n`;
         });
 
         const lunchSlot = slots[lunchIndex] || '11:50 – 12:40';
-        dayRes += `🍱 *Lunch Break:* Slot ${lunchIndex + 1} (\`${lunchSlot}\`)\n`;
+        dayRes += `🍱 **Lunch Break:** Slot ${lunchIndex + 1} (\`${lunchSlot}\`)\n`;
 
         const freeSlots = matchedTrainer.free?.[d] || [];
         if (freeSlots.length > 0) {
-          dayRes += `🟢 *Free Periods:* ${freeSlots.length} slot(s) available on this day.`;
+          dayRes += `🟢 **Available Free Periods:** ${freeSlots.length} slot(s) open.`;
         }
       } else {
-        dayRes += `🟢 *${matchedTrainer.name} has no scheduled classes on ${d} and is fully free for appointments, preparations, or student mentoring.*`;
+        dayRes += `🟢 *No training sessions scheduled for ${matchedTrainer.name} on ${d}. Trainer is available for mentoring, reviews, or consultations.*`;
       }
 
       return dayRes;
     }
 
     // Weekly Trainer Overview
-    let res = `👨‍🏫 **Trainer Profile: ${matchedTrainer.name}**\n\n`;
-    if (matchedTrainer.email) res += `📧 **Email:** ${matchedTrainer.email}\n`;
-    if (matchedTrainer.phone) res += `📱 **Phone:** ${matchedTrainer.phone}\n`;
-    res += `⏱️ **Weekly Workload:** **${matchedTrainer.totalTrainings || 0} active training sessions** (Lead: ${matchedTrainer.mainCount || 0}, Support: ${matchedTrainer.supportCount || 0})\n\n`;
+    let res = `👨‍🏫 **Trainer Profile — ${matchedTrainer.name}**\n\n`;
+    if (matchedTrainer.email) res += `- **Email:** ${matchedTrainer.email}\n`;
+    if (matchedTrainer.phone) res += `- **Contact:** ${matchedTrainer.phone}\n`;
+    res += `- **Weekly Workload:** **${matchedTrainer.totalTrainings || 0} Total Sessions** (Lead: ${matchedTrainer.mainCount || 0}, Support: ${matchedTrainer.supportCount || 0})\n\n`;
 
     const allTaught = [];
     batches.forEach(b => {
@@ -415,11 +416,16 @@ export function answerScheduleQuery(userQuery, scheduleData) {
           allTaught.push({
             batch: b.name,
             group: b.group,
+            dept: b.dept,
             subject: r.subject,
             day: r.day,
             time: r.time,
+            slot: r.slot,
             venue: r.venue,
-            role: isMain ? 'Lead Trainer' : 'Support Trainer',
+            mainList: r.mainList || [],
+            supportList: r.supportList || [],
+            support: r.support,
+            role: isMain ? 'Lead Trainer' : 'Support Mentor',
           });
         }
       });
@@ -428,10 +434,16 @@ export function answerScheduleQuery(userQuery, scheduleData) {
     if (allTaught.length > 0) {
       res += `**Weekly Class Assignments:**\n`;
       allTaught.forEach((s, idx) => {
-        res += `${idx + 1}. **${s.subject}** for **${s.batch}** (${s.group})\n   📅 **${s.day}** · ⏰ ${s.time} ${s.venue ? `· 🏛️ *${s.venue}*` : ''} *(${s.role})*\n`;
+        const supportDisplay = s.support && s.support !== '—' ? s.support : 'None';
+        res += `**${idx + 1}. ${s.subject}** — **${s.batch}** *(${s.group}${s.dept ? ` · ${s.dept}` : ''})*\n`;
+        res += `- 📅 **Day & Time:** ${s.day} · ${s.time} *(Slot ${s.slot})*\n`;
+        res += `- 🏛️ **Venue:** ${s.venue || 'To be assigned'}\n`;
+        res += `- 👨‍🏫 **Lead Trainer:** ${s.mainList.join(', ')}\n`;
+        res += `- 🤝 **Support Mentor:** ${supportDisplay}\n`;
+        res += `- 📌 **Role:** **${s.role}**\n\n`;
       });
     } else {
-      res += `*No active training sessions currently mapped to this trainer.*`;
+      res += `*No active training sessions currently assigned in the database.*`;
     }
 
     return res;
@@ -447,36 +459,41 @@ export function answerScheduleQuery(userQuery, scheduleData) {
   });
 
   if (matchedBatch) {
-    let res = `🎓 **Batch: ${matchedBatch.name}** (${matchedBatch.group})\n\n`;
+    let res = `🎓 **Batch Schedule — ${matchedBatch.name}** *(${matchedBatch.group})*\n\n`;
     if (matchedBatch.dept) res += `- **Department:** ${matchedBatch.dept}\n`;
-    if (matchedBatch.count) res += `- **Students:** ${matchedBatch.count}\n`;
+    if (matchedBatch.count) res += `- **Student Strength:** ${matchedBatch.count} Students\n`;
     if (matchedBatch.venues && matchedBatch.venues.length) {
-      res += `- **Assigned Hall(s):** ${matchedBatch.venues.join(', ')}\n`;
+      res += `- **Designated Venue(s):** ${matchedBatch.venues.join(', ')}\n`;
     }
+    res += `\n`;
 
     if (targetDay) {
-      res += `\n**Schedule for ${targetDay}:**\n`;
+      res += `**Schedule for ${targetDay}:**\n\n`;
       const filteredRows = (matchedBatch.rows || []).filter(r => r.day.toLowerCase().includes(targetDay.toLowerCase()));
       if (filteredRows.length === 0) {
-        res += `\n*No classes scheduled for ${matchedBatch.name} on ${targetDay}.*\n`;
+        res += `*No classes scheduled for ${matchedBatch.name} on ${targetDay}.*\n`;
       } else {
         filteredRows.forEach((r, idx) => {
-          res += `\n**${idx + 1}. ${r.subject}**\n`;
-          res += `   ⏰ **Time:** ${r.time} (Slot ${r.slot})\n`;
-          res += `   🏛️ **Venue:** ${r.venue || 'To be assigned'}\n`;
-          res += `   👨‍🏫 **Trainer:** **${r.trainer}** ${r.support && r.support !== '—' ? `*(Support: ${r.support})*` : ''}\n`;
+          const supportDisplay = r.support && r.support !== '—' ? r.support : 'None';
+          res += `**${idx + 1}. ${r.subject}**\n`;
+          res += `- ⏰ **Timing:** ${r.time} *(Slot ${r.slot})*\n`;
+          res += `- 🏛️ **Venue:** ${r.venue || 'To be assigned'}\n`;
+          res += `- 👨‍🏫 **Lead Trainer:** ${r.trainer}\n`;
+          res += `- 🤝 **Support Mentor:** ${supportDisplay}\n\n`;
         });
       }
     } else {
-      res += `\n**Weekly Timetable (${(matchedBatch.rows || []).length} sessions):**\n`;
+      res += `**Weekly Timetable (${(matchedBatch.rows || []).length} Sessions):**\n\n`;
       if (!matchedBatch.rows || matchedBatch.rows.length === 0) {
-        res += `*No sessions configured yet for this batch.*`;
+        res += `*No sessions currently configured for this batch.*`;
       } else {
         matchedBatch.rows.forEach((r, idx) => {
-          res += `\n**${idx + 1}. ${r.subject}**\n`;
-          res += `   📅 **Day:** ${r.day} (${r.time})\n`;
-          res += `   🏛️ **Venue:** ${r.venue || 'To be assigned'}\n`;
-          res += `   👨‍🏫 **Trainer:** **${r.trainer}** ${r.support && r.support !== '—' ? `*(Support: ${r.support})*` : ''}\n`;
+          const supportDisplay = r.support && r.support !== '—' ? r.support : 'None';
+          res += `**${idx + 1}. ${r.subject}**\n`;
+          res += `- 📅 **Day & Time:** ${r.day} · ${r.time} *(Slot ${r.slot})*\n`;
+          res += `- 🏛️ **Venue:** ${r.venue || 'To be assigned'}\n`;
+          res += `- 👨‍🏫 **Lead Trainer:** ${r.trainer}\n`;
+          res += `- 🤝 **Support Mentor:** ${supportDisplay}\n\n`;
         });
       }
     }
@@ -516,12 +533,17 @@ export function answerScheduleQuery(userQuery, scheduleData) {
       subjectSessions = subjectSessions.filter(s => s.day.toLowerCase().includes(targetDay.toLowerCase()));
     }
 
-    let res = `📚 **Subject: ${matchedSubject}** ${targetDay ? `on **${targetDay}**` : ''} (${subjectSessions.length} sessions found)\n\n`;
+    let res = `📚 **Subject Allocation — ${matchedSubject}** ${targetDay ? `(${targetDay})` : ''}\n\n`;
     if (subjectSessions.length === 0) {
-      res += `*No ${matchedSubject} sessions are scheduled ${targetDay ? `on ${targetDay}` : ''}.*`;
+      res += `*No ${matchedSubject} sessions are scheduled ${targetDay ? `on ${targetDay}` : 'in the timetable'}.*`;
     } else {
       subjectSessions.forEach((s, idx) => {
-        res += `${idx + 1}. **${s.batch}** (${s.group}${s.dept ? ` · ${s.dept}` : ''})\n   📅 **${s.day}** · ⏰ ${s.time} (Slot ${s.slot})\n   🏛️ **Venue:** ${s.venue || 'To be assigned'} · 👨‍🏫 **Trainer:** **${s.trainer}** ${s.support && s.support !== '—' ? `*(Support: ${s.support})*` : ''}\n\n`;
+        const supportDisplay = s.support && s.support !== '—' ? s.support : 'None';
+        res += `**${idx + 1}. ${s.batch}** *(${s.group}${s.dept ? ` · ${s.dept}` : ''})*\n`;
+        res += `- 📅 **Day & Time:** ${s.day} · ${s.time} *(Slot ${s.slot})*\n`;
+        res += `- 🏛️ **Venue:** ${s.venue || 'To be assigned'}\n`;
+        res += `- 👨‍🏫 **Lead Trainer:** ${s.trainer}\n`;
+        res += `- 🤝 **Support Mentor:** ${supportDisplay}\n\n`;
       });
     }
     return res;
@@ -538,8 +560,8 @@ export function answerScheduleQuery(userQuery, scheduleData) {
   });
 
   if (matchedVenue) {
-    let res = `🏛️ **Training Venue: ${matchedVenue.name}**\n\n`;
-    if (matchedVenue.capacity) res += `👥 **Seating Capacity:** ${matchedVenue.capacity} seats\n\n`;
+    let res = `🏛️ **Venue Allocation — ${matchedVenue.name}**\n\n`;
+    if (matchedVenue.capacity) res += `- **Capacity:** ${matchedVenue.capacity} Seats\n\n`;
 
     let venueSessions = [];
     batches.forEach(b => {
@@ -554,6 +576,7 @@ export function answerScheduleQuery(userQuery, scheduleData) {
             time: r.time,
             slot: r.slot,
             trainer: r.trainer,
+            support: r.support,
           });
         }
       });
@@ -564,20 +587,23 @@ export function answerScheduleQuery(userQuery, scheduleData) {
     }
 
     if (venueSessions.length === 0) {
-      res += `🟢 *This hall is unoccupied ${targetDay ? `on ${targetDay}` : 'throughout the week'}.*`;
+      res += `🟢 *Venue is unoccupied ${targetDay ? `on ${targetDay}` : 'throughout the week'}.*`;
     } else {
-      res += `**Scheduled Classes ${targetDay ? `on ${targetDay}` : ''} (${venueSessions.length}):**\n`;
+      res += `**Scheduled Sessions (${venueSessions.length}):**\n\n`;
       venueSessions.forEach((s, idx) => {
-        res += `${idx + 1}. **${s.subject}** (${s.batch} · ${s.group})\n   📅 **${s.day}** · ⏰ ${s.time} (Slot ${s.slot}) · 👨‍🏫 **${s.trainer}**\n`;
+        const supportDisplay = s.support && s.support !== '—' ? s.support : 'None';
+        res += `**${idx + 1}. ${s.subject}** — **${s.batch}** *(${s.group})*\n`;
+        res += `- 📅 **Day & Time:** ${s.day} · ${s.time} *(Slot ${s.slot})*\n`;
+        res += `- 👨‍🏫 **Lead Trainer:** ${s.trainer}\n`;
+        res += `- 🤝 **Support Mentor:** ${supportDisplay}\n\n`;
       });
     }
 
     return res;
   }
 
-  // ── 11. GENERAL DAY-WISE TIMETABLE (INTENT: DAY_TIMETABLE) ──
-  // Triggers ONLY if user explicitly asked for timetable / day schedule or day with no other entity
-  if (targetDay && (hasAny(nq, 'schedule', 'timetable', 'classes', 'sessions', 'what is happening', 'what is scheduled', 'day wise') || queryTokens.length <= 2)) {
+  // ── 11. GENERAL DAY-WISE / TODAY'S TIMETABLE (INTENT: DAY_TIMETABLE) ──
+  if (targetDay && (hasAny(nq, 'schedule', 'timetable', 'classes', 'sessions', 'what is happening', 'what is scheduled', 'day wise', 'today', 'todays') || queryTokens.length <= 2)) {
     const d = targetDay;
     const daySessions = [];
 
@@ -591,24 +617,36 @@ export function answerScheduleQuery(userQuery, scheduleData) {
             subject: r.subject,
             time: r.time,
             slot: r.slot,
+            slots: r.slots || [],
             venue: r.venue,
             trainer: r.trainer,
             support: r.support,
+            mainList: r.mainList || [],
+            supportList: r.supportList || [],
           });
         }
       });
     });
 
     if (daySessions.length === 0) {
-      return `📅 **Schedule for ${d}:**\n\nNo classes are scheduled on this day.`;
+      return `📅 **Master Schedule — ${d}**\n\nNo training sessions are scheduled on this day.`;
     }
 
-    let res = `📅 **Master Schedule for ${d} (${daySessions.length} Active Sessions):**\n\n`;
+    // Sort chronologically by start slot
+    daySessions.sort((a, b) => (a.slots[0] ?? 0) - (b.slots[0] ?? 0));
+
+    let res = `📅 **Master Schedule — ${d} (${daySessions.length} Active Sessions)**\n\n`;
     daySessions.forEach((s, idx) => {
-      res += `${idx + 1}. **${s.subject}** — **${s.batch}** (${s.group}${s.dept ? ` · ${s.dept}` : ''})\n`;
-      res += `   ⏰ **Time:** ${s.time} (Slot ${s.slot})\n`;
-      res += `   🏛️ **Venue:** ${s.venue || 'TBA'} · 👨‍🏫 **Trainer:** **${s.trainer}**\n\n`;
+      const supportDisplay = s.support && s.support !== '—' ? s.support : 'None';
+      res += `**${idx + 1}. ${s.subject}** — **${s.batch}** *(${s.group}${s.dept ? ` · ${s.dept}` : ''})*\n`;
+      res += `- ⏰ **Timing:** ${s.time} *(Slot ${s.slot})*\n`;
+      res += `- 🏛️ **Venue:** ${s.venue || 'To be assigned'}\n`;
+      res += `- 👨‍🏫 **Lead Trainer:** ${s.trainer}\n`;
+      res += `- 🤝 **Support Mentor:** ${supportDisplay}\n\n`;
     });
+
+    const lunchSlot = slots[lunchIndex] || '11:50 – 12:40';
+    res += `🍱 **Campus Lunch Break:** Slot ${lunchIndex + 1} (\`${lunchSlot}\`)`;
     return res;
   }
 
@@ -628,7 +666,7 @@ export function answerScheduleQuery(userQuery, scheduleData) {
 
     if (scoredFacts.length > 0) {
       const topFacts = scoredFacts.slice(0, 4);
-      let res = `🔍 **Here is what I found in the schedule database for "${rawQ}":**\n\n`;
+      let res = `🔍 **Schedule Search Results for "${rawQ}":**\n\n`;
       topFacts.forEach(({ fact }, i) => {
         res += `${i + 1}. ${fact.text}\n\n`;
       });
@@ -637,5 +675,5 @@ export function answerScheduleQuery(userQuery, scheduleData) {
   }
 
   // ── 13. FALLBACK PROMPT ──
-  return `I searched the live schedule database for **"${rawQ}"**, but couldn't find an exact match.\n\n**Try asking:**\n- 🟢 **Availability:** *"Who is free today?"* or *"Who is free at slot 2?"*\n- 👨‍🏫 **Trainer schedule:** *"What is Sudhir's Friday schedule?"* or *"Who teaches Python?"*\n- 🎓 **Batch schedule:** *"Show Batch-1 timetable"* or *"Where is Final Year class?"*\n- 🏢 **Halls:** *"Which halls are free on Wednesday?"*\n- 📅 **Day timetable:** *"Show Monday timetable"* or *"When is lunch break?"*`;
+  return `No direct match found for **"${rawQ}"** in the timetable database.\n\n**Suggested Queries:**\n- 📅 **Day Timetable:** *"Show today's schedule"* or *"Monday timetable"*\n- 🟢 **Trainer Availability:** *"Who is free today?"* or *"Who is free at Slot 2?"*\n- 👨‍🏫 **Trainer Schedule:** *"What is Sudhir's Friday schedule?"*\n- 🎓 **Batch Schedule:** *"Show Batch 1 timetable"*\n- 🏢 **Venue Availability:** *"Which halls are free on Wednesday?"*`;
 }
