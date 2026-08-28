@@ -1,5 +1,7 @@
+import { calculateUniqueStudents } from '../lib/studentStats.js';
+
 export default function Stats({ data }) {
-  const students = data.batches.reduce((s, b) => s + (b.count || 0), 0);
+  const students = calculateUniqueStudents(data.batches);
   const cells = [
     ['', data.trainers.length, 'Trainers'],
     ['dark', data.batches.length, 'Active Batches'],

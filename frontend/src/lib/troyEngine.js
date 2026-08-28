@@ -4,6 +4,8 @@
  * Delivers clear, structured, and accurate responses directly from the live database.
  */
 
+import { calculateUniqueStudents } from './studentStats.js';
+
 // ── Text Normalization & Cleaning ──
 function norm(str) {
   return String(str || '')
@@ -312,14 +314,14 @@ export function answerScheduleQuery(userQuery, scheduleData) {
   }
 
   // ── 6. OVERALL STATS & SUMMARY ──
-  if (hasAny(nq, 'stats', 'statistics', 'summary', 'overview', 'how many', 'total count', 'numbers')) {
-    const totalStudents = batches.reduce((acc, b) => acc + (Number(b.count) || 0), 0);
+  if (hasAny(nq, 'stats', 'statistics', 'summary', 'overview', 'how many', 'total count', 'numbers', 'student count', 'students')) {
+    const totalStudents = calculateUniqueStudents(batches);
     const totalSessions = batches.reduce((acc, b) => acc + (b.rows || []).length, 0);
     const activeTrainers = trainers.filter(t => (t.totalTrainings || 0) > 0).length;
 
     let res = `📊 **Torii Training Program Summary**\n\n`;
     res += `- **Year Groups:** ${groups.length} Active ${upcoming.length > 0 ? `(+ ${upcoming.length} Awaiting Schedule)` : ''}\n`;
-    res += `- **Total Batches:** ${batches.length} (${totalStudents > 0 ? totalStudents.toLocaleString() + ' Enrolled Students' : 'Configured'})\n`;
+    res += `- **Total Batches:** ${batches.length} (${totalStudents > 0 ? totalStudents.toLocaleString() + ' Unique Enrolled Students' : 'Configured'})\n`;
     res += `- **Weekly Class Blocks:** ${totalSessions} Sessions\n`;
     res += `- **Faculty / Trainers:** ${trainers.length} (${activeTrainers} Actively Assigned)\n`;
     res += `- **Training Venues:** ${venues.length} Locations\n`;

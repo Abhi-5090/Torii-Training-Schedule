@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../lib/api.js';
+import { calculateUniqueStudents } from '../lib/studentStats.js';
 import { PageHead, Spinner, Notice, EmptyState } from './ui.jsx';
 
 export default function Dashboard() {
@@ -17,7 +18,7 @@ export default function Dashboard() {
   if (error) return <><PageHead title="Dashboard" /><Notice error={error} /></>;
   if (!data) return <><PageHead title="Dashboard" /><Spinner /></>;
 
-  const students = data.batches.reduce((s, b) => s + (b.count || 0), 0);
+  const students = calculateUniqueStudents(data.batches);
   const sessions = data.batches.reduce((s, b) => s + b.rows.length, 0);
   const unassigned = data.batches.filter(b => b.rows.some(r => !r.mainList.length));
   const noVenue = data.batches.filter(b => b.rows.some(r => !r.venue));

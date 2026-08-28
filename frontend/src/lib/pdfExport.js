@@ -1,6 +1,7 @@
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { abbreviateVenue } from './abbreviate.js';
+import { calculateUniqueStudents } from './studentStats.js';
 
 const BRAND_ORANGE = [241, 93, 35];     // #F15D23
 const DARK_INK = [26, 22, 19];          // #1A1613
@@ -140,7 +141,7 @@ export function exportBatchesPDF(data) {
   addDocHeader(doc, 'Master Batches & Sessions Schedule', 'Academic Training Timetable');
 
   // Summary Metrics Bar
-  const totalStudents = data.batches.reduce((s, b) => s + (b.count || 0), 0);
+  const totalStudents = calculateUniqueStudents(data.batches);
   const totalSessions = data.batches.reduce((s, b) => s + (b.rows || []).length, 0);
 
   autoTable(doc, {
@@ -151,7 +152,7 @@ export function exportBatchesPDF(data) {
     body: [[
       `Total Batches: ${data.batches.length}`,
       `Active Year Groups: ${data.groups.length}`,
-      `Total Enrolled Students: ${totalStudents.toLocaleString()}`,
+      `Enrolled Students: ${totalStudents.toLocaleString()}`,
       `Weekly Sessions: ${totalSessions}`,
       `Training Halls: ${data.venues.length}`,
       `Trainers: ${data.trainers.length}`,

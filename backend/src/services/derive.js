@@ -32,6 +32,45 @@ export function slotLabel(indexes) {
     : String(sorted[0]);
 }
 
+/**
+ * Calculates unique enrolled students by deduplicating student cohorts
+ * across multiple subject modules or tracks within each year group and section.
+ */
+export function calculateUniqueStudents(batches = []) {
+  if (!Array.isArray(batches)) return 0;
+  const byGroup = {};
+  for (const b of batches) {
+    const grp = (b.group || 'Default').trim();
+    if (!byGroup[grp]) byGroup[grp] = [];
+    byGroup[grp].push(b);
+  }
+
+  let totalUnique = 0;
+  for (const groupBatches of Object.values(byGroup)) {
+    const sectionMap = {};
+    for (const b of groupBatches) {
+      const count = Number(b.count) || 0;
+      const dept = (b.dept || '').trim().toLowerCase();
+      let sectionKey = '';
+      if (dept) {
+        sectionKey = 'dept:' + dept;
+      } else {
+        const match = (b.name || '').match(/(batch\s*[-_]?\s*[0-9]+|sec\s*[-_]?\s*[a-z0-9]+|section\s*[-_]?\s*[a-z0-9]+)/i);
+        if (match) {
+          sectionKey = 'sec:' + match[1].toLowerCase().replace(/\s+/g, '');
+        } else {
+          sectionKey = 'name:' + (b.name || '').trim().toLowerCase();
+        }
+      }
+      if (!sectionMap[sectionKey] || count > sectionMap[sectionKey]) {
+        sectionMap[sectionKey] = count;
+      }
+    }
+    totalUnique += Object.values(sectionMap).reduce((a, c) => a + c, 0);
+  }
+  return totalUnique;
+}
+
 function emptyGrid(days, slotCount) {
   const g = {};
   for (const d of days) g[d] = Array(slotCount).fill('');
@@ -286,5 +325,6 @@ export function buildSchedule({ config, groups, trainers, venues, batches, activ
     groups: groupViews,
     upcoming,
     conflicts,
+    uniqueStudents: calculateUniqueStudents(batches),
   };
 }
