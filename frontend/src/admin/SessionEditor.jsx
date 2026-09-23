@@ -46,6 +46,9 @@ function MentorPicker({ label, help, all, chosen = [], exclude = [], busy = {}, 
                 onChange={() => onToggle(t.name)}
               />
               {t.name}
+              <span className={`mini-track ${t.track === 'non-technical' ? 'non-tech' : 'tech'}`}>
+                {t.track === 'non-technical' ? 'Non-Tech' : 'Tech'}
+              </span>
               {taken && <span className="busy-note">busy · {taken}</span>}
             </label>
           );

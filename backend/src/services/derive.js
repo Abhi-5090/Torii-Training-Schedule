@@ -297,6 +297,7 @@ export function buildSchedule({ config, groups, trainers, venues, batches, activ
       name: t.name,
       email: t.email || '',
       phone: t.phone || '',
+      track: t.track || 'technical',
       grid, roles, venues,
       free: s.free, totalFree: s.totalFree, totalBusy: s.totalBusy,
       totalTrainings: s.totalTrainings,

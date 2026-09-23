@@ -6,6 +6,7 @@ const trainerSchema = new mongoose.Schema({
   name:   { type: String, required: true, unique: true, trim: true },
   email:  { type: String, default: '', trim: true },
   phone:  { type: String, default: '', trim: true },
+  track:  { type: String, enum: ['technical', 'non-technical'], default: 'technical' },
   active: { type: Boolean, default: true },
 }, { timestamps: true });
 

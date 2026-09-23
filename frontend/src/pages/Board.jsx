@@ -43,6 +43,7 @@ export default function Board({ admin }) {
   const [dayFilter, setDayFilter] = useState('All');
   const [dayWiseDay, setDayWiseDay] = useState('Monday');
   const [query, setQuery] = useState('');
+  const [trainerTrackFilter, setTrainerTrackFilter] = useState('all'); // 'all' | 'technical' | 'non-technical'
 
   /* `dwell` holds the skeleton up for a beat after every change, the way the
      original did — the board is meant to feel like it is fetching. */
@@ -86,6 +87,18 @@ export default function Board({ admin }) {
     if (firstFilter.current) { firstFilter.current = false; return; }
     return hold(dayFilter === 'All' ? 'Loading all days' : `Loading ${dayFilter}`, D_FILTER);
   }, [dayFilter]);
+
+  /* trainer track filter */
+  const firstTrack = useRef(true);
+  useEffect(() => {
+    if (firstTrack.current) { firstTrack.current = false; return; }
+    const label = trainerTrackFilter === 'all'
+      ? 'all trainers'
+      : trainerTrackFilter === 'technical'
+      ? 'technical trainers'
+      : 'non-technical trainers';
+    return hold(`Loading ${label}`, D_FILTER);
+  }, [trainerTrackFilter]);
 
   /* trainer search, debounced then held */
   const firstQuery = useRef(true);
@@ -143,14 +156,52 @@ export default function Board({ admin }) {
               ))}
             </div>
           )}
-          {(view === 'daywise' || view === 'trainer') && (
+          {view === 'daywise' && (
             <div className="search">
               <SearchIcon />
               <input
-                placeholder={view === 'daywise' ? 'Search batch, subject, trainer…' : 'Search trainer…'}
+                placeholder="Search batch, subject, trainer…"
                 value={query}
                 onChange={e => setQuery(e.target.value)}
               />
+            </div>
+          )}
+          {view === 'trainer' && (
+            <div className="trainer-ctrl">
+              <div className="search">
+                <SearchIcon />
+                <input
+                  placeholder="Search trainer…"
+                  value={query}
+                  onChange={e => setQuery(e.target.value)}
+                />
+              </div>
+              <div className="track-toggle" role="group" aria-label="Filter by Technical or Non-Technical track">
+                <button
+                  type="button"
+                  className={trainerTrackFilter === 'all' ? 'on all' : ''}
+                  onClick={() => setTrainerTrackFilter('all')}
+                  title="Show all trainers"
+                >
+                  All <span className="count-badge">({data.trainers.length})</span>
+                </button>
+                <button
+                  type="button"
+                  className={trainerTrackFilter === 'technical' ? 'on' : ''}
+                  onClick={() => setTrainerTrackFilter('technical')}
+                  title="Show Technical trainers only"
+                >
+                  Tech <span className="count-badge">({data.trainers.filter(t => (t.track || 'technical') === 'technical').length})</span>
+                </button>
+                <button
+                  type="button"
+                  className={trainerTrackFilter === 'non-technical' ? 'on non-tech' : ''}
+                  onClick={() => setTrainerTrackFilter('non-technical')}
+                  title="Show Non-Technical trainers only"
+                >
+                  Non-Tech <span className="count-badge">({data.trainers.filter(t => t.track === 'non-technical').length})</span>
+                </button>
+              </div>
             </div>
           )}
         </div>
@@ -194,11 +245,16 @@ export default function Board({ admin }) {
           <div className="sec-head">
             <h2>Trainer Schedule</h2>
             <span className="hint">
+              {trainerTrackFilter === 'technical'
+                ? `Showing Technical mentors (${data.trainers.filter(t => (t.track || 'technical') === 'technical').length}) · `
+                : trainerTrackFilter === 'non-technical'
+                ? `Showing Non-Technical mentors (${data.trainers.filter(t => t.track === 'non-technical').length}) · `
+                : 'All faculty · '}
               Free vs occupied periods per trainer · lunch ({data.slots[data.lunchIndex]}) is a break for all.
             </span>
           </div>
           {busy ? <Loading msg={dwellMsg} n={2} />
-                : <TrainerView data={data} query={query} admin={admin} refresh={refresh} />}
+                : <TrainerView data={data} query={query} trackFilter={trainerTrackFilter} admin={admin} refresh={refresh} />}
         </section>
       )}
 
@@ -320,12 +376,16 @@ const VENUE_LEGEND = (
 
 const initials = n => n.slice(0, 2).toUpperCase();
 
-function TrainerView({ data, query, admin, refresh }) {
+function TrainerView({ data, query, trackFilter = 'all', admin, refresh }) {
   const host = useRef(null);
   const q = query.trim().toLowerCase();
   const list = useMemo(
-    () => data.trainers.filter(t => t.name.toLowerCase().includes(q)),
-    [data, q],
+    () => data.trainers.filter(t => {
+      const matchQuery = t.name.toLowerCase().includes(q);
+      const matchTrack = trackFilter === 'all' || (t.track || 'technical') === trackFilter;
+      return matchQuery && matchTrack;
+    }),
+    [data, q, trackFilter],
   );
 
   /* the cell currently open in the activity editor, or null */
@@ -333,7 +393,14 @@ function TrainerView({ data, query, admin, refresh }) {
 
   useEffect(() => reveal(host.current), [list]);
 
-  if (!list.length) return <p className="empty">No trainer matches that name.</p>;
+  if (!list.length) {
+    const trackNote = trackFilter === 'technical'
+      ? 'Technical '
+      : trackFilter === 'non-technical'
+      ? 'Non-Technical '
+      : '';
+    return <p className="empty">No {trackNote}trainer matches {q ? `“${q}”` : 'that category'}.</p>;
+  }
 
   return (
     <div ref={host}>
@@ -348,12 +415,21 @@ function TrainerView({ data, query, admin, refresh }) {
         const role = t.mainCount && t.supportCount ? 'Main + Support mentor'
           : t.mainCount ? 'Main mentor'
           : t.supportCount ? 'Support mentor' : 'Unassigned';
+        const isNonTech = t.track === 'non-technical';
         return (
           <article className="tcard rv" key={t.id}>
             <div className="top">
               <div className="tname">
-                <div className="avatar">{initials(t.name)}</div>
-                <div><h3>{t.name}</h3><div className="role">{role}</div></div>
+                <div className={`avatar ${isNonTech ? 'non-tech' : ''}`}>{initials(t.name)}</div>
+                <div>
+                  <div className="tname-head">
+                    <h3>{t.name}</h3>
+                    <span className={`tag-track ${isNonTech ? 'non-tech' : 'tech'}`}>
+                      {isNonTech ? 'Non-Tech' : 'Technical'}
+                    </span>
+                  </div>
+                  <div className="role">{role}</div>
+                </div>
               </div>
               <Counts entity={t} />
             </div>

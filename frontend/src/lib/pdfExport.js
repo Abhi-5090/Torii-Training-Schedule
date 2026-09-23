@@ -243,8 +243,9 @@ export function exportBatchesPDF(data) {
 export function exportTrainerPDF(trainer, config) {
   const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
   const { slots, days, lunchIndex } = config;
+  const trackLabel = trainer.track === 'non-technical' ? 'Non-Technical Mentor' : 'Technical Mentor';
 
-  addDocHeader(doc, `Trainer Timetable & Workload: ${trainer.name}`, 'Individual Mentor Weekly Schedule & Venue Deployment');
+  addDocHeader(doc, `Trainer Timetable: ${trainer.name} (${trackLabel})`, 'Individual Mentor Weekly Schedule & Venue Deployment');
 
   const { trainingsList, activitiesBreakdown, totalTrainings, totalOther } = getTrainerBreakdowns(trainer, days);
 
@@ -417,6 +418,7 @@ export function exportAllTrainersPDF(scheduleData) {
     return [
       idx + 1,
       t.name,
+      t.track === 'non-technical' ? 'Non-Tech' : 'Tech',
       `${totalTrainings} slots\n(${t.mainCount || 0} Main, ${t.supportCount || 0} Supp)`,
       trainingsBullets,
       otherBullets,
@@ -428,7 +430,7 @@ export function exportAllTrainersPDF(scheduleData) {
   autoTable(doc, {
     startY: 48,
     margin: { left: 14, right: 14 },
-    head: [['#', 'Trainer Name', 'Total Trainings', 'Assigned Trainings (Batches, Venues & Hours)', 'Other Assigned Tasks', 'Total Load', 'Free Slots']],
+    head: [['#', 'Trainer Name', 'Track', 'Total Trainings', 'Assigned Trainings (Batches, Venues & Hours)', 'Other Assigned Tasks', 'Total Load', 'Free Slots']],
     body: summaryRows,
     theme: 'grid',
     headStyles: {
@@ -448,13 +450,23 @@ export function exportAllTrainersPDF(scheduleData) {
       lineHeightFactor: 1.25,
     },
     columnStyles: {
-      0: { halign: 'center', cellWidth: 10 },
-      1: { fontStyle: 'bold', cellWidth: 34 },
-      2: { halign: 'center', cellWidth: 28, fontStyle: 'bold', textColor: [184, 56, 14] },
-      3: { cellWidth: 96 },
-      4: { cellWidth: 44 },
-      5: { fontStyle: 'bold', halign: 'center', cellWidth: 24, textColor: BRAND_ORANGE },
-      6: { halign: 'center', cellWidth: 20 },
+      0: { halign: 'center', cellWidth: 8 },
+      1: { fontStyle: 'bold', cellWidth: 32 },
+      2: { halign: 'center', cellWidth: 18, fontStyle: 'bold' },
+      3: { halign: 'center', cellWidth: 26, fontStyle: 'bold', textColor: [184, 56, 14] },
+      4: { cellWidth: 90 },
+      5: { cellWidth: 42 },
+      6: { fontStyle: 'bold', halign: 'center', cellWidth: 22, textColor: BRAND_ORANGE },
+      7: { halign: 'center', cellWidth: 18 },
+    },
+    didParseCell: (dataCell) => {
+      if (dataCell.section === 'body' && dataCell.column.index === 2) {
+        if (dataCell.cell.raw === 'Non-Tech') {
+          dataCell.cell.styles.textColor = [79, 70, 229]; // indigo
+        } else {
+          dataCell.cell.styles.textColor = [184, 56, 14]; // orange
+        }
+      }
     },
     alternateRowStyles: {
       fillColor: LIGHT_GREY,
@@ -464,7 +476,8 @@ export function exportAllTrainersPDF(scheduleData) {
   // Individual Timetable Pages for each Trainer
   for (const t of trainers) {
     doc.addPage();
-    addDocHeader(doc, `Timetable & Workload: ${t.name}`, `Weekly Timetable, Trainings & Assigned Venues — ${t.email || t.phone || 'Mentor'}`);
+    const trackLabel = t.track === 'non-technical' ? 'Non-Technical Mentor' : 'Technical Mentor';
+    addDocHeader(doc, `Timetable: ${t.name} (${trackLabel})`, `Weekly Timetable, Trainings & Assigned Venues — ${t.email || t.phone || 'Mentor'}`);
 
     const { trainingsList, activitiesBreakdown, totalTrainings, totalOther } = getTrainerBreakdowns(t, days);
 

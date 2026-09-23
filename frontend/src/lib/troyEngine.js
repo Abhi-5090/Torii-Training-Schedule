@@ -114,15 +114,17 @@ function buildKnowledgeBase(scheduleData) {
 
   // Trainer Facts
   trainers.forEach(t => {
+    const trackLabel = t.track === 'non-technical' ? 'Non-Technical' : 'Technical';
     facts.push({
       type: 'trainer',
       entity: t.name,
+      track: t.track || 'technical',
       email: t.email,
       phone: t.phone,
       totalTrainings: t.totalTrainings || 0,
       mainCount: t.mainCount || 0,
       supportCount: t.supportCount || 0,
-      text: `Trainer ${t.name} handles ${t.totalTrainings || 0} weekly training sessions (Lead: ${t.mainCount || 0}, Support: ${t.supportCount || 0})${t.email ? ` [${t.email}]` : ''}.`,
+      text: `Trainer ${t.name} (${trackLabel} Mentor) handles ${t.totalTrainings || 0} weekly training sessions (Lead: ${t.mainCount || 0}, Support: ${t.supportCount || 0})${t.email ? ` [${t.email}]` : ''}.`,
     });
   });
 
@@ -170,11 +172,51 @@ export function answerScheduleQuery(userQuery, scheduleData) {
 
   // ── 1. GREETINGS & SYSTEM OVERVIEW ──
   if (/^(hi|hello|hey|greetings|hola|namaste|yo|good\s*(morning|afternoon|evening))\b/i.test(nq)) {
-    return `Hello. I am **Troy**, the live Schedule Assistant for **Torii Training Management**.\n\nDatabase status: **${batches.length} Batches**, **${trainers.length} Trainers**, and **${venues.length} Venues** active.\n\n**Example queries:**\n- 📅 *"Show today's schedule"* or *"Monday timetable"*\n- 🟢 *"Who is free today?"* or *"Who is free on Friday slot 2?"*\n- 👨‍🏫 *"What is Sudhir's Friday schedule?"* or *"Who teaches Python?"*\n- 🎓 *"When is Batch 1 class?"*\n- 🏢 *"Which halls are available on Wednesday?"*`;
+    return `Hello. I am **Troy**, the live Schedule Assistant for **Torii Training Management**.\n\nDatabase status: **${batches.length} Batches**, **${trainers.length} Trainers**, and **${venues.length} Venues** active.\n\n**Example queries:**\n- 📅 *"Show today's schedule"* or *"Monday timetable"*\n- 🟢 *"Who is free today?"* or *"Who is free on Friday slot 2?"*\n- 👨‍🏫 *"Who are the technical trainers?"* or *"Who are the non-tech trainers?"*\n- 🎓 *"When is Batch 1 class?"*\n- 🏢 *"Which halls are available on Wednesday?"*`;
   }
 
   if (hasAny(nq, 'who are you', 'what are you', 'your name', 'about you', 'who is troy')) {
-    return `I am **Troy**, the AI assistant for the **Torii Training Schedule Management System** at NCET.\n\nI provide real-time schedule information directly from the database for:\n- 📅 **Batch Timetables & Venues**\n- 👨‍🏫 **Lead Trainers & Support Mentors**\n- 🟢 **Trainer Availability & Free Periods**\n- 🏛️ **Venue Occupancy & Room Allocations**\n- ⏰ **Campus Period Timings & Breaks**`;
+    return `I am **Troy**, the AI assistant for the **Torii Training Schedule Management System** at NCET.\n\nI provide real-time schedule information directly from the database for:\n- 📅 **Batch Timetables & Venues**\n- 👨‍🏫 **Technical & Non-Technical Faculty**\n- 🟢 **Trainer Availability & Free Periods**\n- 🏛️ **Venue Occupancy & Room Allocations**\n- ⏰ **Campus Period Timings & Breaks**`;
+  }
+
+  // ── 1.1 TRAINER TRACK QUERIES (TECHNICAL vs NON-TECHNICAL) ──
+  const hasNonTechWord = /\bnon\s*tech/i.test(nq);
+  const isNonTechQuery = hasNonTechWord || hasAny(nq, 'who are non technical', 'who is non technical', 'list non technical', 'show non tech');
+  const isTechQuery = !hasNonTechWord && hasAny(nq, 'technical trainer', 'technical trainers', 'technical faculty', 'tech trainer', 'tech trainers', 'technical mentors', 'tech mentors', 'who are technical', 'who is technical', 'list technical', 'show technical', 'technical');
+
+  if (isNonTechQuery) {
+    const nonTechList = trainers.filter(t => t.track === 'non-technical');
+    let res = `👥 **Non-Technical Mentors (${nonTechList.length}):**\n\n`;
+    nonTechList.forEach((t, i) => {
+      res += `${i + 1}. **${t.name}** *(${t.totalTrainings || 0} weekly slots, Lead: ${t.mainCount || 0}, Support: ${t.supportCount || 0})*\n`;
+    });
+    res += `\n*Non-Technical faculty specialize in soft skills, aptitude, verbal ability, design, and career readiness.*`;
+    return res;
+  }
+
+  if (isTechQuery) {
+    const techList = trainers.filter(t => (t.track || 'technical') === 'technical');
+    let res = `💻 **Technical Mentors (${techList.length}):**\n\n`;
+    techList.forEach((t, i) => {
+      res += `${i + 1}. **${t.name}** *(${t.totalTrainings || 0} weekly slots, Lead: ${t.mainCount || 0}, Support: ${t.supportCount || 0})*\n`;
+    });
+    res += `\n*Technical faculty deliver core computer science, software development, and engineering tracks.*`;
+    return res;
+  }
+
+  if (hasAny(nq, 'who are the trainers', 'all trainers', 'list trainers', 'show trainers', 'faculty list', 'trainers list', 'who are trainers', 'show mentors')) {
+    const techList = trainers.filter(t => (t.track || 'technical') === 'technical');
+    const nonTechList = trainers.filter(t => t.track === 'non-technical');
+    let res = `👨‍🏫 **Torii Faculty Directory (${trainers.length} Trainers)**\n\n`;
+    res += `💻 **Technical Mentors (${techList.length}):**\n`;
+    techList.forEach((t, i) => {
+      res += `${i + 1}. **${t.name}** *(${t.totalTrainings || 0} weekly slots)*\n`;
+    });
+    res += `\n👥 **Non-Technical Mentors (${nonTechList.length}):**\n`;
+    nonTechList.forEach((t, i) => {
+      res += `${i + 1}. **${t.name}** *(${t.totalTrainings || 0} weekly slots)*\n`;
+    });
+    return res;
   }
 
   // ── 2. TRAINER AVAILABILITY & FREE TIME (INTENT: FREE_TRAINERS) ──
@@ -404,7 +446,9 @@ export function answerScheduleQuery(userQuery, scheduleData) {
     }
 
     // Weekly Trainer Overview
-    let res = `👨‍🏫 **Trainer Profile — ${matchedTrainer.name}**\n\n`;
+    const trackName = matchedTrainer.track === 'non-technical' ? 'Non-Technical Mentor' : 'Technical Mentor';
+    let res = `👨‍🏫 **Trainer Profile — ${matchedTrainer.name}** *(${trackName})*\n\n`;
+    res += `- **Domain / Track:** **${trackName}**\n`;
     if (matchedTrainer.email) res += `- **Email:** ${matchedTrainer.email}\n`;
     if (matchedTrainer.phone) res += `- **Contact:** ${matchedTrainer.phone}\n`;
     res += `- **Weekly Workload:** **${matchedTrainer.totalTrainings || 0} Total Sessions** (Lead: ${matchedTrainer.mainCount || 0}, Support: ${matchedTrainer.supportCount || 0})\n\n`;

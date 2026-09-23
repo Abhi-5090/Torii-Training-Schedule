@@ -4,13 +4,14 @@ import { announceChange } from './Console.jsx';
 import { Modal, PageHead, Field, Notice, EmptyState, Spinner, confirmDelete } from './ui.jsx';
 import { exportTrainerPDF, exportAllTrainersPDF } from '../lib/pdfExport.js';
 
-const blank = { name: '', email: '', phone: '', active: true };
+const blank = { name: '', email: '', phone: '', track: 'technical', active: true };
 
 export default function TrainersTab() {
   const [rows, setRows] = useState(null);
   const [batches, setBatches] = useState([]);
   const [scheduleData, setScheduleData] = useState(null);
   const [editing, setEditing] = useState(null);
+  const [trackFilter, setTrackFilter] = useState('All');
   const [error, setError] = useState('');
   const [ok, setOk] = useState('');
   const [exporting, setExporting] = useState(false);
@@ -85,7 +86,13 @@ export default function TrainersTab() {
   async function save() {
     setError('');
     try {
-      const body = { name: editing.name, email: editing.email, phone: editing.phone, active: editing.active };
+      const body = {
+        name: editing.name,
+        email: editing.email,
+        phone: editing.phone,
+        track: editing.track || 'technical',
+        active: editing.active,
+      };
       if (editing._id) await api.update('trainers', editing._id, body);
       else await api.create('trainers', body);
       setEditing(null);
@@ -147,17 +154,48 @@ export default function TrainersTab() {
           </EmptyState>
         ) : (
           <div className="tbl-wrap">
+            <div className="admin-filter-bar">
+              <button
+                type="button"
+                className={`btn btn-sm ${trackFilter === 'All' ? 'btn-primary' : 'btn-ghost'}`}
+                onClick={() => setTrackFilter('All')}
+              >
+                All ({rows.length})
+              </button>
+              <button
+                type="button"
+                className={`btn btn-sm ${trackFilter === 'technical' ? 'btn-primary' : 'btn-ghost'}`}
+                onClick={() => setTrackFilter('technical')}
+              >
+                Technical ({rows.filter(t => (t.track || 'technical') === 'technical').length})
+              </button>
+              <button
+                type="button"
+                className={`btn btn-sm ${trackFilter === 'non-technical' ? 'btn-primary' : 'btn-ghost'}`}
+                onClick={() => setTrackFilter('non-technical')}
+              >
+                Non-Technical ({rows.filter(t => t.track === 'non-technical').length})
+              </button>
+            </div>
             <table className="tbl">
               <thead>
-                <tr><th>Name</th><th>Contact</th><th>Weekly load & assignments</th><th>Status</th><th className="act">Actions</th></tr>
+                <tr><th>Name</th><th>Track</th><th>Contact</th><th>Weekly load & assignments</th><th>Status</th><th className="act">Actions</th></tr>
               </thead>
               <tbody>
-                {rows.map(t => {
+                {rows
+                  .filter(t => trackFilter === 'All' || (t.track || 'technical') === trackFilter)
+                  .map(t => {
                   const { main, support, other, activities } = load(t.name);
                   const taskNames = Object.entries(activities).map(([k, v]) => `${k} (${v})`).join(', ');
+                  const isNonTech = t.track === 'non-technical';
                   return (
                     <tr key={t._id}>
                       <td className="nm">{t.name}</td>
+                      <td>
+                        <span className={`pill-tag ${isNonTech ? 'purple' : 'orange'}`}>
+                          {isNonTech ? 'Non-Technical' : 'Technical'}
+                        </span>
+                      </td>
                       <td className="muted" style={{ fontSize: 13 }}>
                         {t.email || t.phone
                           ? <>{t.email}{t.email && t.phone && <br />}{t.phone}</>
@@ -186,7 +224,7 @@ export default function TrainersTab() {
                         >
                           PDF
                         </button>
-                        <button className="btn btn-ghost btn-sm" onClick={() => setEditing({ ...t })}>Edit</button>
+                        <button className="btn btn-ghost btn-sm" onClick={() => setEditing({ ...t, track: t.track || 'technical' })}>Edit</button>
                         <button className="btn btn-danger btn-sm" onClick={() => remove(t)}>Delete</button>
                       </td>
                     </tr>
@@ -215,6 +253,31 @@ export default function TrainersTab() {
 
           <Field label="Name" help="Renaming carries through every session they are on.">
             <input autoFocus value={editing.name} onChange={e => setEditing({ ...editing, name: e.target.value })} />
+          </Field>
+
+          <Field label="Category / Track" help="Technical trainers teach engineering subjects; Non-Technical trainers teach soft skills, aptitude, design, etc.">
+            <div className="track-radio-group">
+              <label className={`track-radio-btn ${(editing.track || 'technical') === 'technical' ? 'active' : ''}`}>
+                <input
+                  type="radio"
+                  name="trainerTrack"
+                  value="technical"
+                  checked={(editing.track || 'technical') === 'technical'}
+                  onChange={() => setEditing({ ...editing, track: 'technical' })}
+                />
+                <span>Technical</span>
+              </label>
+              <label className={`track-radio-btn ${editing.track === 'non-technical' ? 'active non-tech' : ''}`}>
+                <input
+                  type="radio"
+                  name="trainerTrack"
+                  value="non-technical"
+                  checked={editing.track === 'non-technical'}
+                  onChange={() => setEditing({ ...editing, track: 'non-technical' })}
+                />
+                <span>Non-Technical</span>
+              </label>
+            </div>
           </Field>
 
           <div className="sess-grid">
