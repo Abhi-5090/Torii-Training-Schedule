@@ -4,7 +4,7 @@ import { announceChange } from './Console.jsx';
 import { Modal, PageHead, Field, Notice, EmptyState, Spinner, confirmDelete } from './ui.jsx';
 import { exportTrainerPDF, exportAllTrainersPDF } from '../lib/pdfExport.js';
 
-const blank = { name: '', email: '', phone: '', track: 'technical', active: true };
+const blank = { name: '', email: '', phone: '', track: 'teaching', active: true };
 
 export default function TrainersTab() {
   const [rows, setRows] = useState(null);
@@ -90,7 +90,7 @@ export default function TrainersTab() {
         name: editing.name,
         email: editing.email,
         phone: editing.phone,
-        track: editing.track || 'technical',
+        track: editing.track || 'teaching',
         active: editing.active,
       };
       if (editing._id) await api.update('trainers', editing._id, body);
@@ -164,17 +164,17 @@ export default function TrainersTab() {
               </button>
               <button
                 type="button"
-                className={`btn btn-sm ${trackFilter === 'technical' ? 'btn-primary' : 'btn-ghost'}`}
-                onClick={() => setTrackFilter('technical')}
+                className={`btn btn-sm ${trackFilter === 'teaching' ? 'btn-primary' : 'btn-ghost'}`}
+                onClick={() => setTrackFilter('teaching')}
               >
-                Technical ({rows.filter(t => (t.track || 'technical') === 'technical').length})
+                Teaching ({rows.filter(t => (t.track || 'teaching') !== 'non-teaching' && t.track !== 'non-technical').length})
               </button>
               <button
                 type="button"
-                className={`btn btn-sm ${trackFilter === 'non-technical' ? 'btn-primary' : 'btn-ghost'}`}
-                onClick={() => setTrackFilter('non-technical')}
+                className={`btn btn-sm ${trackFilter === 'non-teaching' ? 'btn-primary' : 'btn-ghost'}`}
+                onClick={() => setTrackFilter('non-teaching')}
               >
-                Non-Technical ({rows.filter(t => t.track === 'non-technical').length})
+                Non-Teaching ({rows.filter(t => t.track === 'non-teaching' || t.track === 'non-technical').length})
               </button>
             </div>
             <table className="tbl">
@@ -183,17 +183,21 @@ export default function TrainersTab() {
               </thead>
               <tbody>
                 {rows
-                  .filter(t => trackFilter === 'All' || (t.track || 'technical') === trackFilter)
+                  .filter(t => {
+                    if (trackFilter === 'All') return true;
+                    const isNonTeaching = t.track === 'non-teaching' || t.track === 'non-technical';
+                    return trackFilter === 'non-teaching' ? isNonTeaching : !isNonTeaching;
+                  })
                   .map(t => {
                   const { main, support, other, activities } = load(t.name);
                   const taskNames = Object.entries(activities).map(([k, v]) => `${k} (${v})`).join(', ');
-                  const isNonTech = t.track === 'non-technical';
+                  const isNonTeaching = t.track === 'non-teaching' || t.track === 'non-technical';
                   return (
                     <tr key={t._id}>
                       <td className="nm">{t.name}</td>
                       <td>
-                        <span className={`pill-tag ${isNonTech ? 'purple' : 'orange'}`}>
-                          {isNonTech ? 'Non-Technical' : 'Technical'}
+                        <span className={`pill-tag ${isNonTeaching ? 'purple' : 'orange'}`}>
+                          {isNonTeaching ? 'Non-Teaching' : 'Teaching'}
                         </span>
                       </td>
                       <td className="muted" style={{ fontSize: 13 }}>
@@ -224,7 +228,7 @@ export default function TrainersTab() {
                         >
                           PDF
                         </button>
-                        <button className="btn btn-ghost btn-sm" onClick={() => setEditing({ ...t, track: t.track || 'technical' })}>Edit</button>
+                        <button className="btn btn-ghost btn-sm" onClick={() => setEditing({ ...t, track: (t.track === 'non-teaching' || t.track === 'non-technical') ? 'non-teaching' : 'teaching' })}>Edit</button>
                         <button className="btn btn-danger btn-sm" onClick={() => remove(t)}>Delete</button>
                       </td>
                     </tr>
@@ -255,27 +259,27 @@ export default function TrainersTab() {
             <input autoFocus value={editing.name} onChange={e => setEditing({ ...editing, name: e.target.value })} />
           </Field>
 
-          <Field label="Category / Track" help="Technical trainers teach engineering subjects; Non-Technical trainers teach soft skills, aptitude, design, etc.">
+          <Field label="Category / Track" help="Teaching faculty take core instruction & syllabus; Non-Teaching mentors handle operations, soft skills, aptitude, verbal, design, etc.">
             <div className="track-radio-group">
-              <label className={`track-radio-btn ${(editing.track || 'technical') === 'technical' ? 'active' : ''}`}>
+              <label className={`track-radio-btn ${(editing.track || 'teaching') !== 'non-teaching' && editing.track !== 'non-technical' ? 'active' : ''}`}>
                 <input
                   type="radio"
                   name="trainerTrack"
-                  value="technical"
-                  checked={(editing.track || 'technical') === 'technical'}
-                  onChange={() => setEditing({ ...editing, track: 'technical' })}
+                  value="teaching"
+                  checked={(editing.track || 'teaching') !== 'non-teaching' && editing.track !== 'non-technical'}
+                  onChange={() => setEditing({ ...editing, track: 'teaching' })}
                 />
-                <span>Technical</span>
+                <span>Teaching</span>
               </label>
-              <label className={`track-radio-btn ${editing.track === 'non-technical' ? 'active non-tech' : ''}`}>
+              <label className={`track-radio-btn ${editing.track === 'non-teaching' || editing.track === 'non-technical' ? 'active non-tech non-teaching' : ''}`}>
                 <input
                   type="radio"
                   name="trainerTrack"
-                  value="non-technical"
-                  checked={editing.track === 'non-technical'}
-                  onChange={() => setEditing({ ...editing, track: 'non-technical' })}
+                  value="non-teaching"
+                  checked={editing.track === 'non-teaching' || editing.track === 'non-technical'}
+                  onChange={() => setEditing({ ...editing, track: 'non-teaching' })}
                 />
-                <span>Non-Technical</span>
+                <span>Non-Teaching</span>
               </label>
             </div>
           </Field>

@@ -242,8 +242,8 @@ export function exportBatchesPDF(data) {
    ─────────────────────────────────────────────────────────────────────────── */
 export function exportTrainerPDF(trainer, config) {
   const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-  const { slots, days, lunchIndex } = config;
-  const trackLabel = trainer.track === 'non-technical' ? 'Non-Technical Mentor' : 'Technical Mentor';
+  const isNonTeaching = trainer.track === 'non-teaching' || trainer.track === 'non-technical';
+  const trackLabel = isNonTeaching ? 'Non-Teaching Mentor' : 'Teaching Mentor';
 
   addDocHeader(doc, `Trainer Timetable: ${trainer.name} (${trackLabel})`, 'Individual Mentor Weekly Schedule & Venue Deployment');
 
@@ -415,10 +415,11 @@ export function exportAllTrainersPDF(scheduleData) {
 
     const totalActive = totalTrainings + totalOther;
 
+    const isNonTeaching = t.track === 'non-teaching' || t.track === 'non-technical';
     return [
       idx + 1,
       t.name,
-      t.track === 'non-technical' ? 'Non-Tech' : 'Tech',
+      isNonTeaching ? 'Non-Teaching' : 'Teaching',
       `${totalTrainings} slots\n(${t.mainCount || 0} Main, ${t.supportCount || 0} Supp)`,
       trainingsBullets,
       otherBullets,
@@ -452,16 +453,16 @@ export function exportAllTrainersPDF(scheduleData) {
     columnStyles: {
       0: { halign: 'center', cellWidth: 8 },
       1: { fontStyle: 'bold', cellWidth: 32 },
-      2: { halign: 'center', cellWidth: 18, fontStyle: 'bold' },
+      2: { halign: 'center', cellWidth: 22, fontStyle: 'bold' },
       3: { halign: 'center', cellWidth: 26, fontStyle: 'bold', textColor: [184, 56, 14] },
-      4: { cellWidth: 90 },
+      4: { cellWidth: 86 },
       5: { cellWidth: 42 },
       6: { fontStyle: 'bold', halign: 'center', cellWidth: 22, textColor: BRAND_ORANGE },
       7: { halign: 'center', cellWidth: 18 },
     },
     didParseCell: (dataCell) => {
       if (dataCell.section === 'body' && dataCell.column.index === 2) {
-        if (dataCell.cell.raw === 'Non-Tech') {
+        if (dataCell.cell.raw === 'Non-Teaching' || dataCell.cell.raw === 'Non-Tech') {
           dataCell.cell.styles.textColor = [79, 70, 229]; // indigo
         } else {
           dataCell.cell.styles.textColor = [184, 56, 14]; // orange
@@ -476,7 +477,8 @@ export function exportAllTrainersPDF(scheduleData) {
   // Individual Timetable Pages for each Trainer
   for (const t of trainers) {
     doc.addPage();
-    const trackLabel = t.track === 'non-technical' ? 'Non-Technical Mentor' : 'Technical Mentor';
+    const isNonTeaching = t.track === 'non-teaching' || t.track === 'non-technical';
+    const trackLabel = isNonTeaching ? 'Non-Teaching Mentor' : 'Teaching Mentor';
     addDocHeader(doc, `Timetable: ${t.name} (${trackLabel})`, `Weekly Timetable, Trainings & Assigned Venues — ${t.email || t.phone || 'Mentor'}`);
 
     const { trainingsList, activitiesBreakdown, totalTrainings, totalOther } = getTrainerBreakdowns(t, days);

@@ -36,79 +36,79 @@
   "trainers": [
     {
       "name": "Bhargav",
-      "track": "technical"
+      "track": "teaching"
     },
     {
       "name": "Sudhir",
-      "track": "technical"
+      "track": "teaching"
     },
     {
       "name": "Naveen",
-      "track": "technical"
+      "track": "teaching"
     },
     {
       "name": "Harshavardhini",
-      "track": "technical"
+      "track": "teaching"
     },
     {
       "name": "Suneeta",
-      "track": "technical"
+      "track": "teaching"
     },
     {
       "name": "Abhishek",
-      "track": "technical"
+      "track": "teaching"
     },
     {
       "name": "Abraham",
-      "track": "technical"
+      "track": "teaching"
     },
     {
       "name": "Veerababu",
-      "track": "technical"
+      "track": "teaching"
     },
     {
       "name": "Sampath",
-      "track": "technical"
+      "track": "teaching"
     },
     {
       "name": "Azar",
-      "track": "technical"
+      "track": "teaching"
     },
     {
       "name": "Peter",
-      "track": "non-technical"
+      "track": "non-teaching"
     },
     {
       "name": "Jayanth",
-      "track": "technical"
+      "track": "teaching"
     },
     {
       "name": "Prasanth",
-      "track": "technical"
+      "track": "teaching"
     },
     {
       "name": "Harika",
-      "track": "technical"
+      "track": "teaching"
     },
     {
       "name": "Satish",
-      "track": "non-technical"
+      "track": "non-teaching"
     },
     {
       "name": "Kiran Immandi",
-      "track": "non-technical"
+      "track": "non-teaching"
     },
     {
       "name": "Prasanth K",
-      "track": "non-technical"
+      "track": "non-teaching"
     },
     {
       "name": "Hemavathi",
-      "track": "non-technical"
+      "track": "non-teaching"
     },
     {
       "name": "Abhilash",
-      "track": "technical"
+      "track": "teaching"
     }
   ],
   "venues": [

@@ -114,9 +114,10 @@ router.post('/trainers', wrap(async (req, res) => {
   if (!name) return fail(res, 400, 'Trainer name is required');
   if (await Trainer.findOne({ name })) return fail(res, 409, `${name} is already on the list`);
 
-  const track = str(req.body?.track).toLowerCase() === 'non-technical' || str(req.body?.track).toLowerCase() === 'non-tech'
-    ? 'non-technical'
-    : 'technical';
+  const raw = str(req.body?.track).toLowerCase();
+  const track = raw === 'non-teaching' || raw === 'non-technical' || raw === 'non-tech'
+    ? 'non-teaching'
+    : 'teaching';
 
   res.status(201).json(await Trainer.create({
     name, email: str(req.body?.email), phone: str(req.body?.phone),
@@ -148,7 +149,9 @@ router.put('/trainers/:id', wrap(async (req, res) => {
   if (req.body?.phone !== undefined) trainer.phone = str(req.body.phone);
   if (req.body?.track !== undefined) {
     const rawTrack = str(req.body.track).toLowerCase();
-    trainer.track = rawTrack === 'non-technical' || rawTrack === 'non-tech' ? 'non-technical' : 'technical';
+    trainer.track = rawTrack === 'non-teaching' || rawTrack === 'non-technical' || rawTrack === 'non-tech'
+      ? 'non-teaching'
+      : 'teaching';
   }
   if (req.body?.active !== undefined) trainer.active = !!req.body.active;
   await trainer.save();
@@ -415,7 +418,7 @@ router.get('/availability', wrap(async (req, res) => {
     const conflicts = summarise(map.get(x.name) || []);
     return {
       name: x.name,
-      track: x.track || 'technical',
+      track: (x.track === 'non-teaching' || x.track === 'non-technical') ? 'non-teaching' : 'teaching',
       free: conflicts.length === 0,
       busyWith: conflicts[0]?.batch || null,      // kept for the single-session picker
       conflicts,

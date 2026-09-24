@@ -43,7 +43,7 @@ export default function Board({ admin }) {
   const [dayFilter, setDayFilter] = useState('All');
   const [dayWiseDay, setDayWiseDay] = useState('Monday');
   const [query, setQuery] = useState('');
-  const [trainerTrackFilter, setTrainerTrackFilter] = useState('technical'); // 'technical' | 'non-technical'
+  const [trainerTrackFilter, setTrainerTrackFilter] = useState('teaching'); // 'teaching' | 'non-teaching'
 
   /* `dwell` holds the skeleton up for a beat after every change, the way the
      original did — the board is meant to feel like it is fetching. */
@@ -92,9 +92,9 @@ export default function Board({ admin }) {
   const firstTrack = useRef(true);
   useEffect(() => {
     if (firstTrack.current) { firstTrack.current = false; return; }
-    const label = trainerTrackFilter === 'technical'
-      ? 'technical trainers'
-      : 'non-technical trainers';
+    const label = trainerTrackFilter === 'teaching'
+      ? 'teaching trainers'
+      : 'non-teaching trainers';
     return hold(`Loading ${label}`, D_FILTER);
   }, [trainerTrackFilter]);
 
@@ -174,22 +174,22 @@ export default function Board({ admin }) {
                   onChange={e => setQuery(e.target.value)}
                 />
               </div>
-              <div className="track-toggle" role="group" aria-label="Filter by Technical or Non-Technical track">
+              <div className="track-toggle" role="group" aria-label="Filter by Teaching or Non-Teaching track">
                 <button
                   type="button"
-                  className={trainerTrackFilter === 'technical' ? 'on' : ''}
-                  onClick={() => setTrainerTrackFilter('technical')}
-                  title="Show Technical trainers"
+                  className={trainerTrackFilter === 'teaching' ? 'on' : ''}
+                  onClick={() => setTrainerTrackFilter('teaching')}
+                  title="Show Teaching trainers"
                 >
-                  Tech <span className="count-badge">({data.trainers.filter(t => (t.track || 'technical') === 'technical').length})</span>
+                  Teaching <span className="count-badge">({data.trainers.filter(t => (t.track || 'teaching') !== 'non-teaching' && t.track !== 'non-technical').length})</span>
                 </button>
                 <button
                   type="button"
-                  className={trainerTrackFilter === 'non-technical' ? 'on non-tech' : ''}
-                  onClick={() => setTrainerTrackFilter('non-technical')}
-                  title="Show Non-Technical trainers"
+                  className={trainerTrackFilter === 'non-teaching' ? 'on non-teaching' : ''}
+                  onClick={() => setTrainerTrackFilter('non-teaching')}
+                  title="Show Non-Teaching trainers"
                 >
-                  Non-Tech <span className="count-badge">({data.trainers.filter(t => t.track === 'non-technical').length})</span>
+                  Non-Teaching <span className="count-badge">({data.trainers.filter(t => t.track === 'non-teaching' || t.track === 'non-technical').length})</span>
                 </button>
               </div>
             </div>
@@ -235,9 +235,9 @@ export default function Board({ admin }) {
           <div className="sec-head">
             <h2>Trainer Schedule</h2>
             <span className="hint">
-              {trainerTrackFilter === 'technical'
-                ? `Showing Technical mentors (${data.trainers.filter(t => (t.track || 'technical') === 'technical').length}) · `
-                : `Showing Non-Technical mentors (${data.trainers.filter(t => t.track === 'non-technical').length}) · `}
+              {trainerTrackFilter === 'teaching'
+                ? `Showing Teaching mentors (${data.trainers.filter(t => (t.track || 'teaching') !== 'non-teaching' && t.track !== 'non-technical').length}) · `
+                : `Showing Non-Teaching mentors (${data.trainers.filter(t => t.track === 'non-teaching' || t.track === 'non-technical').length}) · `}
               Free vs occupied periods per trainer · lunch ({data.slots[data.lunchIndex]}) is a break for all.
             </span>
           </div>
@@ -364,13 +364,14 @@ const VENUE_LEGEND = (
 
 const initials = n => n.slice(0, 2).toUpperCase();
 
-function TrainerView({ data, query, trackFilter = 'technical', admin, refresh }) {
+function TrainerView({ data, query, trackFilter = 'teaching', admin, refresh }) {
   const host = useRef(null);
   const q = query.trim().toLowerCase();
   const list = useMemo(
     () => data.trainers.filter(t => {
       const matchQuery = t.name.toLowerCase().includes(q);
-      const matchTrack = (t.track || 'technical') === trackFilter;
+      const isNonTeaching = t.track === 'non-teaching' || t.track === 'non-technical';
+      const matchTrack = trackFilter === 'non-teaching' ? isNonTeaching : !isNonTeaching;
       return matchQuery && matchTrack;
     }),
     [data, q, trackFilter],
@@ -382,7 +383,7 @@ function TrainerView({ data, query, trackFilter = 'technical', admin, refresh })
   useEffect(() => reveal(host.current), [list]);
 
   if (!list.length) {
-    const trackNote = trackFilter === 'technical' ? 'Technical ' : 'Non-Technical ';
+    const trackNote = trackFilter === 'teaching' ? 'Teaching ' : 'Non-Teaching ';
     return <p className="empty">No {trackNote}trainer matches {q ? `“${q}”` : 'that category'}.</p>;
   }
 
@@ -399,17 +400,17 @@ function TrainerView({ data, query, trackFilter = 'technical', admin, refresh })
         const role = t.mainCount && t.supportCount ? 'Main + Support mentor'
           : t.mainCount ? 'Main mentor'
           : t.supportCount ? 'Support mentor' : 'Unassigned';
-        const isNonTech = t.track === 'non-technical';
+        const isNonTeaching = t.track === 'non-teaching' || t.track === 'non-technical';
         return (
           <article className="tcard rv" key={t.id}>
             <div className="top">
               <div className="tname">
-                <div className={`avatar ${isNonTech ? 'non-tech' : ''}`}>{initials(t.name)}</div>
+                <div className={`avatar ${isNonTeaching ? 'non-teaching' : ''}`}>{initials(t.name)}</div>
                 <div>
                   <div className="tname-head">
                     <h3>{t.name}</h3>
-                    <span className={`tag-track ${isNonTech ? 'non-tech' : 'tech'}`}>
-                      {isNonTech ? 'Non-Tech' : 'Technical'}
+                    <span className={`tag-track ${isNonTeaching ? 'non-teaching' : 'teaching'}`}>
+                      {isNonTeaching ? 'Non-Teaching' : 'Teaching'}
                     </span>
                   </div>
                   <div className="role">{role}</div>

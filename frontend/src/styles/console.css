@@ -219,17 +219,23 @@ html[data-theme="dark"] .pill-tag.purple{background:rgba(129,140,248,.18); color
 .track-radio-btn{display:inline-flex; align-items:center; gap:8px; padding:9px 16px; border-radius:10px; border:1px solid var(--line); background:var(--card); cursor:pointer; font-family:'Space Grotesk',sans-serif; font-size:13.5px; font-weight:600; color:var(--ink-2); transition:all .18s; user-select:none}
 .track-radio-btn:hover{border-color:var(--orange)}
 .track-radio-btn.active{border-color:var(--orange); background:var(--orange-tint); color:var(--orange-deep)}
-.track-radio-btn.active.non-tech{border-color:#6366F1; background:rgba(99,102,241,.12); color:#4F46E5}
-html[data-theme="dark"] .track-radio-btn.active.non-tech{background:rgba(129,140,248,.18); color:#C7D2FE; border-color:#818CF8}
+.track-radio-btn.active.non-tech,
+.track-radio-btn.active.non-teaching{border-color:#6366F1; background:rgba(99,102,241,.12); color:#4F46E5}
+html[data-theme="dark"] .track-radio-btn.active.non-tech,
+html[data-theme="dark"] .track-radio-btn.active.non-teaching{background:rgba(129,140,248,.18); color:#C7D2FE; border-color:#818CF8}
 .track-radio-btn input{accent-color:var(--orange); margin:0}
-.track-radio-btn.active.non-tech input{accent-color:#4F46E5}
+.track-radio-btn.active.non-tech input,
+.track-radio-btn.active.non-teaching input{accent-color:#4F46E5}
 
 .admin-filter-bar{display:flex; gap:8px; align-items:center; margin-bottom:16px; flex-wrap:wrap}
 
 .mini-track{font-family:'Space Grotesk',sans-serif; font-size:9.5px; font-weight:700; padding:1px 6px; border-radius:999px; margin-left:6px; letter-spacing:.02em; display:inline-block; vertical-align:middle}
-.mini-track.tech{background:var(--orange-tint); color:var(--orange-deep)}
-.mini-track.non-tech{background:rgba(99,102,241,.14); color:#4F46E5}
-html[data-theme="dark"] .mini-track.non-tech{background:rgba(129,140,248,.20); color:#C7D2FE}
+.mini-track.tech,
+.mini-track.teaching{background:var(--orange-tint); color:var(--orange-deep)}
+.mini-track.non-tech,
+.mini-track.non-teaching{background:rgba(99,102,241,.14); color:#4F46E5}
+html[data-theme="dark"] .mini-track.non-tech,
+html[data-theme="dark"] .mini-track.non-teaching{background:rgba(129,140,248,.20); color:#C7D2FE}
 
 /* ── stat strip on the dashboard ── */
 .mini-stats{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:14px; margin-bottom:22px}
