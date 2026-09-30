@@ -88,6 +88,7 @@ function collapseRows(sessions, config) {
     const key = JSON.stringify([
       slotList, s.subject, s.venue || '',
       [...(s.mainTrainers || [])], [...(s.supportTrainers || [])],
+      s.startDate || '', s.endDate || '',
     ]);
     if (!buckets.has(key)) buckets.set(key, { session: s, slotList, dayIdx: [] });
     const idx = days.indexOf(s.day);
@@ -122,6 +123,8 @@ function collapseRows(sessions, config) {
         support: support.length ? support.join(', ') : '—',
         mainList: main,
         supportList: support,
+        startDate: session.startDate || '',
+        endDate: session.endDate || '',
       });
     }
   }
@@ -144,6 +147,8 @@ export function buildSchedule({ config, groups, trainers, venues, batches, activ
     const batchSessions = (b.sessions || []).map(s => ({
       ...s,
       venue: s.venue !== undefined ? s.venue : (b.venue || ''),
+      startDate: s.startDate || b.startDate || '',
+      endDate: s.endDate || b.endDate || '',
     }));
     const rows = collapseRows(batchSessions, config);
     /* A batch can meet in different halls on different days now, so there is
@@ -158,7 +163,10 @@ export function buildSchedule({ config, groups, trainers, venues, batches, activ
       venues,
       count: b.count || 0,
       order: Number(b.order) || 0,
+      startDate: b.startDate || '',
+      endDate: b.endDate || '',
       rows,
+      sessions: batchSessions,
     };
   });
 

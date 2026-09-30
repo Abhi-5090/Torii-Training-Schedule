@@ -727,3 +727,182 @@ export function exportDayPDF(data, dayName) {
   doc.save(`Torii_Schedule_${dayName}.pdf`);
 }
 
+/**
+ * Generates an executive Monthly Schedule Calendar PDF for a given year & month.
+ */
+export function exportMonthCalendarPDF(schedule, year, monthIndex, filterGroup = 'All') {
+  const monthNames = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December',
+  ];
+  const weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
+  const monthName = monthNames[monthIndex] || `Month ${monthIndex + 1}`;
+  const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+  const pageWidth = doc.internal.pageSize.getWidth();
+
+  const title = `${monthName.toUpperCase()} ${year} · TRAINING CALENDAR SCHEDULE`;
+  const subtitle = filterGroup !== 'All'
+    ? `Monthly Timetable Schedule — Year Group: ${filterGroup}`
+    : 'Monthly Institutional Timetable Schedule & Faculty Deployment';
+
+  addDocHeader(doc, title, subtitle);
+
+  const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
+  const rows = [];
+  let trainingDays = 0;
+  let totalClasses = 0;
+  const activeBatches = new Set();
+  const activeMentors = new Set();
+  const activeVenues = new Set();
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateStr = `${year}-${String(monthIndex + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    const dateObj = new Date(year, monthIndex, d);
+    const dayOfWeek = weekdays[(dateObj.getDay() + 6) % 7];
+
+    // Find active classes on this date
+    const dayClasses = [];
+    for (const b of schedule.batches || []) {
+      if (filterGroup !== 'All' && b.group !== filterGroup) continue;
+
+      // Check tentative date window
+      if (b.startDate && dateStr < b.startDate) continue;
+      if (b.endDate && dateStr > b.endDate) continue;
+
+      for (const s of (b.sessions || [])) {
+        if (s.day !== dayOfWeek) continue;
+        const sessionStart = s.startDate || b.startDate || '';
+        const sessionEnd = s.endDate || b.endDate || '';
+        if (sessionStart && dateStr < sessionStart) continue;
+        if (sessionEnd && dateStr > sessionEnd) continue;
+
+        const slots = [...(s.slots || [])].sort((a, b) => a - b);
+        let timeStr = '';
+        if (schedule.slots && slots.length) {
+          const s1 = String(schedule.slots[slots[0]] || '').split(/[–-]/)[0].trim();
+          const s2 = String(schedule.slots[slots[slots.length - 1]] || '').split(/[–-]/).pop().trim();
+          if (s1 && s2) timeStr = `${s1} – ${s2}`;
+        }
+        const slotLabel = slots.length > 1
+          ? `Slot ${slots[0] + 1}–${slots[slots.length - 1] + 1}`
+          : `Slot ${(slots[0] || 0) + 1}`;
+
+        dayClasses.push({
+          batch: b.name,
+          group: b.group,
+          dept: b.dept || '',
+          time: `${slotLabel} (${timeStr})`,
+          subject: s.subject,
+          venue: abbreviateVenue(s.venue || b.venue || 'Unassigned'),
+          main: (s.mainTrainers || []).join(', ') || 'Unassigned',
+          support: (s.supportTrainers || []).join(', ') || '—',
+        });
+
+        activeBatches.add(b.name);
+        if (s.venue || b.venue) activeVenues.add(s.venue || b.venue);
+        (s.mainTrainers || []).forEach(m => activeMentors.add(m));
+        (s.supportTrainers || []).forEach(sm => activeMentors.add(sm));
+      }
+    }
+
+    if (dayClasses.length > 0) {
+      trainingDays++;
+      totalClasses += dayClasses.length;
+      dayClasses.forEach((c, idx) => {
+        rows.push([
+          idx === 0 ? `${monthName.slice(0, 3)} ${d}` : '',
+          idx === 0 ? dayOfWeek : '',
+          c.batch + (c.dept ? ` (${c.dept})` : ''),
+          c.group,
+          c.time,
+          c.subject,
+          c.venue,
+          c.main,
+          c.support,
+        ]);
+      });
+    }
+  }
+
+  // Monthly summary metrics cards
+  const statsY = 50;
+  const metrics = [
+    ['Month Days', `${daysInMonth} Days`],
+    ['Training Days', `${trainingDays} Days`],
+    ['Total Classes', `${totalClasses} Classes`],
+    ['Active Batches', `${activeBatches.size} Batches`],
+    ['Faculty Deployed', `${activeMentors.size} Mentors`],
+    ['Halls Utilized', `${activeVenues.size} Halls`],
+  ];
+
+  const cardW = (pageWidth - 28 - (metrics.length - 1) * 3) / metrics.length;
+  metrics.forEach(([label, val], i) => {
+    const x = 14 + i * (cardW + 3);
+    doc.setFillColor(...ACCENT_BG);
+    doc.setDrawColor(...LINE_BORDER);
+    doc.roundedRect(x, statsY, cardW, 13, 1.5, 1.5, 'FD');
+
+    doc.setFillColor(...BRAND_ORANGE);
+    doc.rect(x, statsY, 1.5, 13, 'F');
+
+    doc.setTextColor(...BRAND_ORANGE);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.text(val, x + 4, statsY + 5.5);
+
+    doc.setTextColor(...MUTED_INK);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6.5);
+    doc.text(label.toUpperCase(), x + 4, statsY + 10);
+  });
+
+  if (rows.length === 0) {
+    doc.setTextColor(...MUTED_INK);
+    doc.setFont('helvetica', 'italic');
+    doc.setFontSize(11);
+    doc.text('No training classes scheduled in this month for the selected filter.', 14, 76);
+  } else {
+    autoTable(doc, {
+      startY: 68,
+      margin: { left: 14, right: 14 },
+      head: [['Date', 'Day', 'Batch / Section', 'Year Group', 'Period & Time', 'Subject', 'Training Hall', 'Main Mentor(s)', 'Support Mentor(s)']],
+      body: rows,
+      theme: 'grid',
+      headStyles: {
+        fillColor: DARK_INK,
+        textColor: [255, 255, 255],
+        fontStyle: 'bold',
+        fontSize: 8,
+        halign: 'center',
+      },
+      styles: {
+        font: 'helvetica',
+        fontSize: 7.2,
+        cellPadding: 2,
+        valign: 'middle',
+        lineColor: LINE_BORDER,
+        lineWidth: 0.15,
+      },
+      columnStyles: {
+        0: { fontStyle: 'bold', halign: 'center', cellWidth: 18 },
+        1: { halign: 'center', cellWidth: 22 },
+        2: { fontStyle: 'bold', cellWidth: 42 },
+        3: { halign: 'center', cellWidth: 26 },
+        4: { halign: 'center', cellWidth: 38 },
+        5: { fontStyle: 'bold', cellWidth: 34 },
+        6: { halign: 'center', cellWidth: 32 },
+        7: { cellWidth: 32 },
+        8: { cellWidth: 25 },
+      },
+      alternateRowStyles: {
+        fillColor: LIGHT_GREY,
+      },
+    });
+  }
+
+  addDocFooter(doc);
+  doc.save(`Torii_Monthly_Schedule_${monthName}_${year}.pdf`);
+}
+
+

@@ -10,15 +10,19 @@ const sessionSchema = new mongoose.Schema({
   venue:           { type: String, default: '' },        // Venue.name, '' = unassigned — per session, not per batch, since a batch can meet in different halls on different days
   mainTrainers:    { type: [String], default: [] },
   supportTrainers: { type: [String], default: [] },
+  startDate:       { type: String, default: '' },        // Optional tentative start date (YYYY-MM-DD)
+  endDate:         { type: String, default: '' },        // Optional tentative end date (YYYY-MM-DD)
 }, { _id: true });
 
 const batchSchema = new mongoose.Schema({
-  name:     { type: String, required: true, unique: true, trim: true },
-  group:    { type: String, required: true },            // YearGroup.name
-  dept:     { type: String, default: '' },
-  count:    { type: Number, default: 0 },
-  order:    { type: Number, default: 0 },
-  sessions: { type: [sessionSchema], default: [] },
+  name:      { type: String, required: true, unique: true, trim: true },
+  group:     { type: String, required: true },            // YearGroup.name
+  dept:      { type: String, default: '' },
+  count:     { type: Number, default: 0 },
+  order:     { type: Number, default: 0 },
+  startDate: { type: String, default: '' },               // Tentative start date for training (YYYY-MM-DD)
+  endDate:   { type: String, default: '' },               // Tentative end date for training (YYYY-MM-DD)
+  sessions:  { type: [sessionSchema], default: [] },
 }, { timestamps: true });
 
 export default mongoose.model('Batch', batchSchema);

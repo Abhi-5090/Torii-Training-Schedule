@@ -1,0 +1,785 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   TORII MONTHLY CALENDAR SCHEDULE STYLESHEET
+   Seamlessly integrated with Torii design system tokens and themes.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── Calendar container ── */
+.cal-view {
+  margin-top: 4px;
+}
+
+/* ── Calendar Top Controls & Sub-bar ── */
+.cal-subbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-bottom: 22px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 12px 18px;
+  box-shadow: var(--shadow-sm);
+}
+
+.cal-month-stepper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cal-step-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink-2);
+  cursor: pointer;
+  transition: all .18s var(--ease);
+}
+
+.cal-step-btn:hover {
+  border-color: var(--orange);
+  color: var(--orange);
+  background: var(--orange-tint);
+  transform: translateY(-1px);
+}
+
+.cal-step-btn svg {
+  width: 17px;
+  height: 17px;
+}
+
+.cal-month-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cal-month-heading {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -.02em;
+  color: var(--ink);
+  margin: 0;
+  white-space: nowrap;
+}
+
+.cal-month-select {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink-2);
+  outline: none;
+  cursor: pointer;
+  transition: border-color .18s;
+}
+
+.cal-month-select:focus {
+  border-color: var(--orange);
+}
+
+/* ── Quick month chips ── */
+.cal-quick-chips {
+  display: flex;
+  gap: 7px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.cal-chip {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink-2);
+  padding: 6px 13px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all .16s;
+  white-space: nowrap;
+}
+
+.cal-chip:hover {
+  border-color: var(--orange);
+  color: var(--orange);
+}
+
+.cal-chip.on {
+  background: linear-gradient(135deg, var(--orange), var(--orange-deep));
+  color: #fff;
+  border-color: transparent;
+  box-shadow: 0 4px 12px -4px rgba(241, 93, 35, .8);
+}
+
+.cal-chip.today-btn {
+  border-color: var(--orange-soft);
+  background: var(--orange-tint);
+  color: var(--orange-deep);
+}
+
+.cal-chip.today-btn:hover {
+  background: var(--orange);
+  color: #fff;
+}
+
+/* ── Top right actions ── */
+.cal-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.cal-view-modes {
+  display: inline-flex;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 3px;
+}
+
+.cal-mode-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 0;
+  background: transparent;
+  color: var(--ink-2);
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 6px 13px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all .18s;
+  line-height: 1;
+}
+
+.cal-mode-btn:hover {
+  color: var(--orange);
+}
+
+.cal-mode-btn.on {
+  background: var(--card);
+  color: var(--orange-deep);
+  box-shadow: var(--shadow-sm);
+}
+
+.cal-mode-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* ── Monthly Summary Metrics Bar ── */
+.cal-metrics {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 12px;
+  margin-bottom: 22px;
+}
+
+.cal-stat {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 14px 16px;
+  box-shadow: var(--shadow-sm);
+  position: relative;
+  overflow: hidden;
+}
+
+.cal-stat::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3.5px;
+  background: var(--orange);
+}
+
+.cal-stat.dark::before {
+  background: var(--ink);
+}
+
+.cal-stat .n {
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 700;
+  font-size: 24px;
+  letter-spacing: -.02em;
+  line-height: 1;
+  color: var(--orange);
+}
+
+.cal-stat.dark .n {
+  color: var(--ink);
+}
+
+.cal-stat .l {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 6px;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* ── Month Grid Container ── */
+.cal-grid-wrapper {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  margin-bottom: 26px;
+}
+
+/* ── Weekday Headers Row ── */
+.cal-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+}
+
+.cal-weekday {
+  padding: 12px 10px;
+  text-align: center;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  color: var(--ink-2);
+  text-transform: uppercase;
+  border-right: 1px solid var(--line);
+}
+
+.cal-weekday:last-child {
+  border-right: none;
+}
+
+.cal-weekday.weekend {
+  color: var(--muted);
+}
+
+/* ── Month Grid Matrix (7 Columns) ── */
+.cal-grid-matrix {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  background: var(--line);
+  gap: 1px; /* Creates clean cell separator lines */
+}
+
+/* ── Individual Day Cell ── */
+.cal-day {
+  background: var(--card);
+  min-height: 136px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  transition: background .15s;
+  cursor: pointer;
+}
+
+.cal-day:hover {
+  background: var(--orange-tint);
+}
+
+.cal-day.out-month {
+  background: var(--surface);
+  opacity: .52;
+}
+
+.cal-day.weekend-day {
+  background: rgba(0, 0, 0, .015);
+}
+
+html[data-theme="dark"] .cal-day.weekend-day {
+  background: rgba(255, 255, 255, .015);
+}
+
+.cal-day.is-today {
+  box-shadow: inset 0 0 0 2px var(--orange);
+}
+
+/* ── Day Header Strip ── */
+.cal-day-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.cal-day-num {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--ink-2);
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  line-height: 1;
+}
+
+.cal-day.is-today .cal-day-num {
+  background: var(--orange);
+  color: #fff;
+  box-shadow: 0 3px 8px -3px rgba(241, 93, 35, .8);
+}
+
+.cal-day-classes-badge {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--orange-soft);
+  color: var(--orange-burnt);
+  white-space: nowrap;
+}
+
+.cal-day.out-month .cal-day-classes-badge {
+  opacity: .7;
+}
+
+.cal-day-weekend-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--muted);
+  font-family: 'JetBrains Mono', monospace;
+  text-transform: uppercase;
+}
+
+/* ── Class chips inside day cell ── */
+.cal-day-classes {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.cal-class-chip {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--orange);
+  border-radius: 6px;
+  padding: 4px 6px;
+  font-size: 11px;
+  line-height: 1.25;
+  transition: all .14s var(--ease);
+  overflow: hidden;
+  text-align: left;
+}
+
+.cal-class-chip:hover {
+  transform: translateY(-1px);
+  border-color: var(--orange);
+  box-shadow: var(--shadow-sm);
+}
+
+.cal-class-chip.final-year {
+  border-left-color: #F15D23; /* Bright Torii Orange */
+}
+
+.cal-class-chip.third-year {
+  border-left-color: #3B82F6; /* Blue */
+}
+
+.cal-class-chip.second-year {
+  border-left-color: #10B981; /* Emerald */
+}
+
+.cal-class-chip.first-year {
+  border-left-color: #8B5CF6; /* Purple */
+}
+
+.cal-chip-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 2px;
+}
+
+.cal-chip-slot {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--orange-deep);
+  white-space: nowrap;
+}
+
+.cal-chip-hall {
+  font-size: 9.5px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 55%;
+}
+
+.cal-chip-subj {
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 700;
+  font-size: 11px;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cal-chip-batch {
+  font-size: 10px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 1px;
+}
+
+.cal-more-classes {
+  margin-top: auto;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--orange-deep);
+  padding: 3px 6px;
+  background: var(--orange-tint);
+  border-radius: 4px;
+  text-align: center;
+  cursor: pointer;
+  transition: background .14s;
+}
+
+.cal-more-classes:hover {
+  background: var(--orange-soft);
+}
+
+/* ── Agenda / Day-by-Day List Mode ── */
+.cal-agenda-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.cal-agenda-day {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+.cal-agenda-day.is-today {
+  border-color: var(--orange);
+  box-shadow: 0 0 0 1px var(--orange-soft), var(--shadow-sm);
+}
+
+.cal-agenda-day-head {
+  padding: 12px 18px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.cal-agenda-day-title {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.cal-agenda-day-title h3 {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 17px;
+  font-weight: 700;
+  margin: 0;
+  color: var(--ink);
+}
+
+.cal-agenda-date-badge {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--orange-deep);
+  font-weight: 600;
+}
+
+.cal-agenda-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr));
+  gap: 12px;
+  padding: 14px 18px;
+}
+
+.cal-agenda-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px 14px;
+  transition: all .16s;
+}
+
+.cal-agenda-card:hover {
+  border-color: var(--orange);
+  background: var(--card);
+  box-shadow: var(--shadow-sm);
+}
+
+/* ── Interactive Day Detail Inspector Modal ── */
+.cal-modal-day-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--line);
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.cal-modal-day-title {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cal-modal-day-title h2 {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  margin: 0;
+  color: var(--ink);
+}
+
+.cal-modal-day-title span {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
+.cal-modal-pills {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.cal-modal-pill {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  color: var(--ink-2);
+}
+
+.cal-modal-sessions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 60vh;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.cal-modal-session-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 14px 16px;
+  transition: all .18s;
+}
+
+.cal-modal-session-card:hover {
+  border-color: var(--orange);
+  background: var(--card);
+  box-shadow: var(--shadow-sm);
+}
+
+.cal-modal-sess-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.cal-modal-sess-title {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0 0 4px;
+}
+
+.cal-modal-sess-batch {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.cal-modal-sess-time {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--orange-deep);
+  background: var(--orange-tint);
+  border: 1px solid var(--orange-soft);
+  padding: 3px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.cal-modal-sess-body {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line-2);
+  font-size: 12.5px;
+}
+
+.cal-modal-sess-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.cal-modal-sess-item .label {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+
+.cal-modal-sess-item .val {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.cal-modal-period-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--orange-burnt);
+  background: var(--orange-soft);
+  padding: 2px 7px;
+  border-radius: 999px;
+  margin-top: 6px;
+}
+
+/* ── Segmented pill color for calendar ── */
+.seg[data-view="calendar"] .pill {
+  background: linear-gradient(135deg, #E0531A, var(--orange));
+  box-shadow: 0 8px 18px -8px rgba(241, 93, 35, .7);
+}
+
+/* ── Tag Period Badge for Batch Card & Tables ── */
+.tag-period {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--orange-tint);
+  color: var(--orange-deep);
+  border: 1px solid var(--orange-soft);
+  white-space: nowrap;
+}
+
+/* ── Responsive rules ── */
+@media (max-width: 1080px) {
+  .cal-metrics {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 860px) {
+  .cal-subbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+  .cal-month-stepper {
+    justify-content: space-between;
+  }
+  .cal-actions {
+    justify-content: space-between;
+    width: 100%;
+  }
+  .cal-day {
+    min-height: 100px;
+    padding: 6px;
+  }
+  .cal-chip-batch {
+    display: none;
+  }
+  .cal-weekday {
+    font-size: 11px;
+    padding: 8px 4px;
+  }
+  .cal-metrics {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 620px) {
+  .cal-grid-matrix {
+    /* Compact calendar grid on mobile */
+    gap: 1px;
+  }
+  .cal-day {
+    min-height: 72px;
+    padding: 4px 2px;
+  }
+  .cal-day-num {
+    font-size: 12px;
+    width: 20px;
+    height: 20px;
+  }
+  .cal-day-classes-badge {
+    display: none;
+  }
+  .cal-class-chip {
+    padding: 2px 3px;
+    font-size: 9.5px;
+  }
+  .cal-chip-top {
+    display: none;
+  }
+  .cal-chip-subj {
+    font-size: 9.5px;
+  }
+  .cal-metrics {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+}

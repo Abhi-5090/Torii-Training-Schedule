@@ -5,9 +5,12 @@ import { Modal, PageHead, Field, Notice, EmptyState, Spinner, confirmDelete } fr
 import SessionEditor, { blankSession } from './SessionEditor.jsx';
 
 import { exportBatchesPDF } from '../lib/pdfExport.js';
+import { formatDateRange } from '../lib/calendarUtils.js';
 
 const emptyBatch = groups => ({
-  name: '', group: groups[0]?.name || '', dept: '', count: 0, sessions: [blankSession()],
+  name: '', group: groups[0]?.name || '', dept: '', count: 0,
+  startDate: '', endDate: '',
+  sessions: [blankSession()],
 });
 
 export default function BatchesTab() {
@@ -71,7 +74,10 @@ export default function BatchesTab() {
     try {
       const body = {
         name: draft.name, group: draft.group, dept: draft.dept,
-        count: Number(draft.count) || 0, sessions: draft.sessions,
+        count: Number(draft.count) || 0,
+        startDate: draft.startDate || '',
+        endDate: draft.endDate || '',
+        sessions: draft.sessions,
       };
       if (draft._id) await api.update('batches', draft._id, body);
       else await api.create('batches', body);
@@ -236,6 +242,7 @@ export default function BatchesTab() {
                   <th style={{ width: 95 }}>Order</th>
                   <th>Batch</th>
                   <th>Year</th>
+                  <th>Tentative Period</th>
                   <th>Sessions</th>
                   <th>Halls</th>
                   <th>Students</th>
@@ -284,6 +291,15 @@ export default function BatchesTab() {
                         {b.dept && <div className="muted" style={{ fontWeight: 400, fontSize: 12, marginTop: 3 }}>{b.dept}</div>}
                       </td>
                       <td className="muted">{b.group}</td>
+                      <td>
+                        {(b.startDate || b.endDate) ? (
+                          <span className="tag-period" title={`From ${b.startDate || 'start'} to ${b.endDate || 'end'}`}>
+                            📅 {formatDateRange(b.startDate, b.endDate)}
+                          </span>
+                        ) : (
+                          <span className="muted" style={{ fontSize: 12 }}>Continuous</span>
+                        )}
+                      </td>
                       <td>
                         <span className="mono">{sess.length}</span>
                         {!!unstaffed && <span className="pill-tag warn" style={{ marginLeft: 8 }}>{unstaffed} unstaffed</span>}
@@ -481,6 +497,77 @@ export default function BatchesTab() {
                 onChange={e => setEditing({ ...editing, count: e.target.value })}
               />
             </Field>
+          </div>
+
+          <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 14, padding: '14px 16px', margin: '14px 0 20px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, flexWrap: 'wrap', gap: 8 }}>
+              <div>
+                <strong style={{ fontSize: 13.5, color: 'var(--ink)' }}>📅 Tentative Training Dates (Monthly Calendar)</strong>
+                <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 2 }}>
+                  Defines the start and end dates when classes for this batch appear on the Monthly Calendar.
+                </div>
+              </div>
+              {(editing.startDate || editing.endDate) && (
+                <span className="tag-period" style={{ fontSize: 11 }}>
+                  📅 {formatDateRange(editing.startDate, editing.endDate)}
+                </span>
+              )}
+            </div>
+
+            <div className="sess-grid" style={{ marginBottom: 10 }}>
+              <Field label="Tentative Start Date">
+                <input
+                  type="date"
+                  value={editing.startDate || ''}
+                  onChange={e => setEditing({ ...editing, startDate: e.target.value })}
+                />
+              </Field>
+              <Field label="Tentative End Date">
+                <input
+                  type="date"
+                  value={editing.endDate || ''}
+                  onChange={e => setEditing({ ...editing, endDate: e.target.value })}
+                />
+              </Field>
+            </div>
+
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+              <span style={{ fontSize: 11, color: 'var(--muted)', fontWeight: 600 }}>Quick Presets:</span>
+              <button
+                type="button"
+                className="btn btn-ghost btn-sm"
+                style={{ fontSize: 11.5, padding: '3px 8px' }}
+                onClick={() => setEditing({ ...editing, startDate: '2026-09-01', endDate: '2026-09-30' })}
+              >
+                September 2026
+              </button>
+              <button
+                type="button"
+                className="btn btn-ghost btn-sm"
+                style={{ fontSize: 11.5, padding: '3px 8px' }}
+                onClick={() => setEditing({ ...editing, startDate: '2026-10-01', endDate: '2026-10-31' })}
+              >
+                October 2026
+              </button>
+              <button
+                type="button"
+                className="btn btn-ghost btn-sm"
+                style={{ fontSize: 11.5, padding: '3px 8px' }}
+                onClick={() => setEditing({ ...editing, startDate: '2026-09-01', endDate: '2026-10-31' })}
+              >
+                Sep – Oct 2026
+              </button>
+              {(editing.startDate || editing.endDate) && (
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-sm"
+                  style={{ fontSize: 11.5, padding: '3px 8px', color: 'var(--orange-burnt)' }}
+                  onClick={() => setEditing({ ...editing, startDate: '', endDate: '' })}
+                >
+                  Clear (Continuous)
+                </button>
+              )}
+            </div>
           </div>
 
           <h2 style={{ fontSize: 16, margin: '26px 0 6px' }}>Weekly sessions</h2>

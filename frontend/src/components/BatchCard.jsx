@@ -1,4 +1,5 @@
 import { PinIcon } from './Icons.jsx';
+import { formatDateRange } from '../lib/calendarUtils.js';
 
 /* A day range reads better broken over two lines, the way it did originally. */
 function DayLabel({ day }) {
@@ -22,7 +23,14 @@ export default function BatchCard({ batch, dimUnless }) {
       <header>
         <div>
           <h3>{batch.name}</h3>
-          <div className="meta">{batch.dept && <span className="tag dept">{batch.dept}</span>}</div>
+          <div className="meta">
+            {batch.dept && <span className="tag dept">{batch.dept}</span>}
+            {(batch.startDate || batch.endDate) && (
+              <span className="tag-period" title="Tentative schedule dates">
+                📅 {formatDateRange(batch.startDate, batch.endDate)}
+              </span>
+            )}
+          </div>
         </div>
         {!!batch.count && <div className="cnt-b">{batch.count}<span>students</span></div>}
       </header>

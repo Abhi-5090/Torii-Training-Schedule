@@ -85,6 +85,50 @@ function extractSlot(q, slots = []) {
   return null;
 }
 
+function extractMonth(q) {
+  const nq = norm(q);
+  const monthMap = [
+    { patterns: ['january', 'jan'], index: 0, name: 'January' },
+    { patterns: ['february', 'feb'], index: 1, name: 'February' },
+    { patterns: ['march', 'mar'], index: 2, name: 'March' },
+    { patterns: ['april', 'apr'], index: 3, name: 'April' },
+    { patterns: ['may'], index: 4, name: 'May' },
+    { patterns: ['june', 'jun'], index: 5, name: 'June' },
+    { patterns: ['july', 'jul'], index: 6, name: 'July' },
+    { patterns: ['august', 'aug'], index: 7, name: 'August' },
+    { patterns: ['september', 'sep', 'sept'], index: 8, name: 'September' },
+    { patterns: ['october', 'oct'], index: 9, name: 'October' },
+    { patterns: ['november', 'nov'], index: 10, name: 'November' },
+    { patterns: ['december', 'dec'], index: 11, name: 'December' },
+  ];
+
+  if (/\b(this month|current month)\b/i.test(nq)) {
+    const m = new Date().getMonth();
+    return { index: m, name: monthMap[m].name, year: new Date().getFullYear() };
+  }
+  if (/\b(next month)\b/i.test(nq)) {
+    const nextDate = new Date();
+    nextDate.setMonth(nextDate.getMonth() + 1);
+    const m = nextDate.getMonth();
+    return { index: m, name: monthMap[m].name, year: nextDate.getFullYear() };
+  }
+
+  for (const m of monthMap) {
+    for (const pat of m.patterns) {
+      if (new RegExp(`\\b${pat}\\b`, 'i').test(nq)) {
+        return { index: m.index, name: m.name, year: 2026 };
+      }
+    }
+  }
+
+  if (/\b(monthly|calendar|monthly calendar|tentative dates|training dates)\b/i.test(nq)) {
+    const m = new Date().getMonth();
+    return { index: m, name: monthMap[m].name, year: new Date().getFullYear(), isGeneralCalendar: true };
+  }
+
+  return null;
+}
+
 // ── RAG Knowledge Index Builder ──
 function buildKnowledgeBase(scheduleData) {
   const { slots = [], days = [], batches = [], trainers = [], venues = [], groups = [] } = scheduleData;
@@ -170,14 +214,57 @@ export function answerScheduleQuery(userQuery, scheduleData) {
   const cq = cleanQuery(rawQ);
   const targetDay = extractDay(rawQ, days);
   const targetSlot = extractSlot(rawQ, slots);
+  const targetMonth = extractMonth(rawQ);
 
   // ── 1. GREETINGS & SYSTEM OVERVIEW ──
   if (/^(hi|hello|hey|greetings|hola|namaste|yo|good\s*(morning|afternoon|evening))\b/i.test(nq)) {
-    return `Hello. I am **Troy**, the live Schedule Assistant for **Torii Training Management**.\n\nDatabase status: **${batches.length} Batches**, **${trainers.length} Trainers**, and **${venues.length} Venues** active.\n\n**Example queries:**\n- 📅 *"Show today's schedule"* or *"Monday timetable"*\n- 🟢 *"Who is free today?"* or *"Who is free on Friday slot 2?"*\n- 👨‍🏫 *"Who are the teaching trainers?"* or *"Who are the non-teaching trainers?"*\n- 🎓 *"When is Batch 1 class?"*\n- 🏢 *"Which halls are available on Wednesday?"*`;
+    return `Hello. I am **Troy**, the live Schedule Assistant for **Torii Training Management**.\n\nDatabase status: **${batches.length} Batches**, **${trainers.length} Trainers**, and **${venues.length} Venues** active.\n\n**Example queries:**\n- 📅 *"Show today's schedule"* or *"Monday timetable"*\n- 🗓️ *"What is the schedule for September?"* or *"October schedule"*\n- 🟢 *"Who is free today?"* or *"Who is free on Friday slot 2?"*\n- 👨‍🏫 *"Who are the teaching trainers?"* or *"Who are the non-teaching trainers?"*\n- 🎓 *"When is Batch 1 class?"*\n- 🏢 *"Which halls are available on Wednesday?"*`;
   }
 
   if (hasAny(nq, 'who are you', 'what are you', 'your name', 'about you', 'who is troy')) {
-    return `I am **Troy**, the AI assistant for the **Torii Training Schedule Management System** at NCET.\n\nI provide real-time schedule information directly from the database for:\n- 📅 **Batch Timetables & Venues**\n- 👨‍🏫 **Teaching & Non-Teaching Faculty**\n- 🟢 **Trainer Availability & Free Periods**\n- 🏛️ **Venue Occupancy & Room Allocations**\n- ⏰ **Campus Period Timings & Breaks**`;
+    return `I am **Troy**, the AI assistant for the **Torii Training Schedule Management System** at NCET.\n\nI provide real-time schedule information directly from the database for:\n- 🗓️ **Monthly Calendar & Tentative Training Dates**\n- 📅 **Batch Timetables & Venues**\n- 👨‍🏫 **Teaching & Non-Teaching Faculty**\n- 🟢 **Trainer Availability & Free Periods**\n- 🏛️ **Venue Occupancy & Room Allocations**\n- ⏰ **Campus Period Timings & Breaks**`;
+  }
+
+  // ── 1.2 MONTHLY CALENDAR & TENTATIVE SCHEDULE QUERIES ──
+  const isCalendarQuery = !!targetMonth || hasAny(nq, 'calendar schedule', 'monthly calendar', 'month calendar', 'month schedule', 'tentative dates', 'training dates');
+  if (isCalendarQuery) {
+    const mIdx = targetMonth ? targetMonth.index : (new Date().getMonth());
+    const mName = targetMonth ? targetMonth.name : 'September';
+    const mYear = targetMonth?.year || 2026;
+
+    const mStart = `${mYear}-${String(mIdx + 1).padStart(2, '0')}-01`;
+    const lastDay = new Date(mYear, mIdx + 1, 0).getDate();
+    const mEnd = `${mYear}-${String(mIdx + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+
+    const activeBatchesInMonth = batches.filter(b => {
+      if (!b.startDate && !b.endDate) return true;
+      if (b.startDate && b.startDate > mEnd) return false;
+      if (b.endDate && b.endDate < mStart) return false;
+      return true;
+    });
+
+    let res = `🗓️ **${mName.toUpperCase()} ${mYear} · MONTHLY TRAINING SCHEDULE**\n\n`;
+    res += `For **${mName} ${mYear}**, there are **${activeBatchesInMonth.length} active batches** with scheduled training classes:\n\n`;
+
+    const byGroup = {};
+    activeBatchesInMonth.forEach(b => {
+      if (!byGroup[b.group]) byGroup[b.group] = [];
+      byGroup[b.group].push(b);
+    });
+
+    Object.entries(byGroup).forEach(([grp, list]) => {
+      res += `🎓 **${grp} (${list.length} Batches):**\n`;
+      list.forEach(b => {
+        const periodStr = (b.startDate || b.endDate)
+          ? ` · *[${b.startDate || 'start'} to ${b.endDate || 'end'}]*`
+          : ' · *[Ongoing]*';
+        res += `- **${b.name}**${b.dept ? ` (${b.dept})` : ''}: ${(b.sessions || []).length} weekly sessions${periodStr}\n`;
+      });
+      res += `\n`;
+    });
+
+    res += `📌 **Note:** You can open the **Monthly Calendar** tab on the main board to see the complete 7-day calendar matrix for ${mName} ${mYear}, inspect day-by-day class allocations, or export a PDF!`;
+    return res;
   }
 
   // ── 1.1 TRAINER TRACK QUERIES (TEACHING vs NON-TEACHING) ──

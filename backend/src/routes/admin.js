@@ -249,8 +249,10 @@ async function validateSessions(raw, res) {
     const clean = list => [...new Set((Array.isArray(list) ? list : []).map(str).filter(Boolean))];
     const mainTrainers = clean(s?.mainTrainers);
     const supportTrainers = clean(s?.supportTrainers).filter(n => !mainTrainers.includes(n));
+    const startDate = str(s?.startDate);
+    const endDate = str(s?.endDate);
 
-    sessions.push({ day, slots, subject, venue, mainTrainers, supportTrainers });
+    sessions.push({ day, slots, subject, venue, mainTrainers, supportTrainers, startDate, endDate });
   }
   return sessions;
 }
@@ -276,12 +278,17 @@ router.post('/batches', wrap(async (req, res) => {
   const sessions = await validateSessions(req.body?.sessions, res);
   if (!sessions) return;
 
+  const startDate = str(req.body?.startDate);
+  const endDate = str(req.body?.endDate);
+
   const last = await Batch.findOne().sort({ order: -1 }).lean();
   res.status(201).json(await Batch.create({
     name, group,
     dept: str(req.body?.dept),
     count: Number(req.body?.count) || 0,
     order: req.body?.order ?? ((last?.order ?? -1) + 1),
+    startDate,
+    endDate,
     sessions,
   }));
 }));
@@ -336,6 +343,8 @@ router.put('/batches/:id', wrap(async (req, res) => {
   if (req.body?.dept !== undefined) batch.dept = str(req.body.dept);
   if (req.body?.count !== undefined) batch.count = Number(req.body.count) || 0;
   if (req.body?.order !== undefined) batch.order = Number(req.body.order);
+  if (req.body?.startDate !== undefined) batch.startDate = str(req.body.startDate);
+  if (req.body?.endDate !== undefined) batch.endDate = str(req.body.endDate);
   await batch.save();
   res.json(batch);
 }));

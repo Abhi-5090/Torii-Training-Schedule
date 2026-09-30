@@ -11,7 +11,8 @@ import SoonCard from '../components/SoonCard.jsx';
 import PeriodGrid, { Counts, freeAllDay, dayShort } from '../components/PeriodGrid.jsx';
 import ActivityModal from '../components/ActivityModal.jsx';
 import DayWiseView from '../components/DayWiseView.jsx';
-import { CalendarIcon, CalendarDayIcon, PersonIcon, BuildingIcon, SearchIcon } from '../components/Icons.jsx';
+import CalendarView from '../components/CalendarView.jsx';
+import { CalendarIcon, CalendarDayIcon, CalendarMonthIcon, PersonIcon, BuildingIcon, SearchIcon } from '../components/Icons.jsx';
 import { formatDayShort } from '../lib/abbreviate.js';
 
 /* loading dwell, ms — the same beats the original board used */
@@ -20,6 +21,7 @@ const D_VIEW = 900, D_FILTER = 620, D_SEARCH = 460;
 const VIEWS = {
   schedule: { msg: 'Loading class schedule', n: 3, label: 'Overall Schedule', shortLabel: 'Overall', Icon: CalendarIcon },
   daywise:  { msg: 'Loading day-wise schedule', n: 3, label: 'Day Wise Schedule', shortLabel: 'Day Wise', Icon: CalendarDayIcon },
+  calendar: { msg: 'Loading monthly calendar', n: 3, label: 'Monthly Calendar', shortLabel: 'Calendar', Icon: CalendarMonthIcon },
   trainer:  { msg: 'Loading trainer grids',  n: 2, label: 'Trainer Schedule',  shortLabel: 'Trainers', Icon: PersonIcon },
   venue:    { msg: 'Loading hall occupancy', n: 2, label: 'Venue Schedule',    shortLabel: 'Venues',   Icon: BuildingIcon },
 };
@@ -227,6 +229,19 @@ export default function Board({ admin }) {
                     onQueryChange={setQuery}
                     admin={admin}
                   />}
+        </section>
+      )}
+
+      {view === 'calendar' && (
+        <section className="panel show">
+          <div className="sec-head">
+            <h2>Monthly Training Calendar</h2>
+            <span className="hint">
+              Comprehensive day-by-day training classes, tentative batch duration, and scheduled modules across months
+            </span>
+          </div>
+          {busy ? <Loading msg={dwellMsg} n={3} />
+                : <CalendarView data={data} admin={admin} />}
         </section>
       )}
 

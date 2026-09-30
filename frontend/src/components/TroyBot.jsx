@@ -12,6 +12,8 @@ const INITIAL_MESSAGE = {
 
 const SUGGESTIONS = [
   "📅 Today's schedule",
+  "🗓️ September schedule",
+  "🗓️ October schedule",
   "👨‍🏫 Who are the trainers?",
   "🏢 Which halls are free?",
   "🍱 Lunch break timing",

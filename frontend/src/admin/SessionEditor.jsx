@@ -149,10 +149,27 @@ export default function SessionEditor({ index, session, config, trainers, venues
           onToggle={n => toggleIn('supportTrainers', n)}
         />
       </div>
+
+      <div className="sess-grid" style={{ marginTop: 10 }}>
+        <Field label="Session start date (optional)" help="Leave blank to use batch tentative start date.">
+          <input
+            type="date"
+            value={session.startDate || ''}
+            onChange={e => set({ startDate: e.target.value })}
+          />
+        </Field>
+        <Field label="Session end date (optional)" help="Leave blank to use batch tentative end date.">
+          <input
+            type="date"
+            value={session.endDate || ''}
+            onChange={e => set({ endDate: e.target.value })}
+          />
+        </Field>
+      </div>
     </div>
   );
 }
 
 export const blankSession = () => ({
-  day: '', slots: [], subject: '', venue: '', mainTrainers: [], supportTrainers: [],
+  day: '', slots: [], subject: '', venue: '', mainTrainers: [], supportTrainers: [], startDate: '', endDate: '',
 });

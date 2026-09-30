@@ -222,7 +222,9 @@
             "Jayanth"
           ]
         }
-      ]
+      ],
+      "startDate": "2026-09-01",
+      "endDate": "2026-10-31"
     },
     {
       "name": "Placement 2027 · Batch-2",
@@ -319,7 +321,9 @@
           ],
           "supportTrainers": []
         }
-      ]
+      ],
+      "startDate": "2026-09-01",
+      "endDate": "2026-10-31"
     },
     {
       "name": "AI Ready 2028 · Batch-1",
@@ -376,7 +380,9 @@
             "Abhishek"
           ]
         }
-      ]
+      ],
+      "startDate": "2026-09-01",
+      "endDate": "2026-09-30"
     },
     {
       "name": "AI Ready 2028 · Batch-2",
@@ -433,7 +439,9 @@
             "Abhishek"
           ]
         }
-      ]
+      ],
+      "startDate": "2026-10-01",
+      "endDate": "2026-10-31"
     },
     {
       "name": "Placement 2028 · Batch-3",
@@ -491,7 +499,9 @@
             "Harika"
           ]
         }
-      ]
+      ],
+      "startDate": "2026-09-01",
+      "endDate": "2026-10-31"
     },
     {
       "name": "Placement 2028 · Batch-4",
@@ -549,7 +559,9 @@
             "Harika"
           ]
         }
-      ]
+      ],
+      "startDate": "2026-09-01",
+      "endDate": "2026-10-31"
     },
     {
       "name": "C · Batch-1",
@@ -580,7 +592,9 @@
           "mainTrainers": [],
           "supportTrainers": []
         }
-      ]
+      ],
+      "startDate": "2026-09-01",
+      "endDate": "2026-09-30"
     },
     {
       "name": "C · Batch-2",
@@ -611,7 +625,9 @@
           "mainTrainers": [],
           "supportTrainers": []
         }
-      ]
+      ],
+      "startDate": "2026-09-01",
+      "endDate": "2026-09-30"
     },
     {
       "name": "C · Batch-3",
@@ -642,7 +658,9 @@
           "mainTrainers": [],
           "supportTrainers": []
         }
-      ]
+      ],
+      "startDate": "2026-10-01",
+      "endDate": "2026-10-31"
     },
     {
       "name": "C · Batch-4",
@@ -673,7 +691,9 @@
           "mainTrainers": [],
           "supportTrainers": []
         }
-      ]
+      ],
+      "startDate": "2026-10-01",
+      "endDate": "2026-10-31"
     },
     {
       "name": "Python · Batch-1",
@@ -704,7 +724,9 @@
           "mainTrainers": [],
           "supportTrainers": []
         }
-      ]
+      ],
+      "startDate": "2026-10-01",
+      "endDate": "2026-10-31"
     },
     {
       "name": "Python · Batch-2",
@@ -735,7 +757,9 @@
           "mainTrainers": [],
           "supportTrainers": []
         }
-      ]
+      ],
+      "startDate": "2026-10-01",
+      "endDate": "2026-10-31"
     }
   ]
 }
