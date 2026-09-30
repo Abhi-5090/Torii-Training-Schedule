@@ -272,7 +272,8 @@
 }
 
 .cal-weekday.weekend {
-  color: var(--muted);
+  background: #100E0C;
+  color: #F0B49E;
 }
 
 /* ── Month Grid Matrix (7 Columns) ── */
@@ -304,12 +305,30 @@
   opacity: .52;
 }
 
+/* ── Saturday and Sunday (Weekend) ── */
 .cal-day.weekend-day {
-  background: rgba(0, 0, 0, .015);
+  background: #100E0C;
 }
 
-html[data-theme="dark"] .cal-day.weekend-day {
-  background: rgba(255, 255, 255, .015);
+.cal-day.weekend-day .cal-day-num {
+  color: #F6F0EB;
+}
+
+.cal-day.weekend-day .cal-day-weekend-label {
+  color: #D79A76;
+}
+
+.cal-day.weekend-day:hover {
+  background: #191613;
+}
+
+.cal-day.weekend-day.out-month {
+  background: #100E0C;
+  opacity: .55;
+}
+
+.cal-day.weekend-day.out-month .cal-day-num {
+  color: #8C8178;
 }
 
 .cal-day.is-today {
