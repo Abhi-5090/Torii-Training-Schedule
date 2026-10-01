@@ -292,7 +292,13 @@ function Segmented({ view, onChange }) {
 
   const position = () => {
     const on = segRef.current?.querySelector('button.on');
-    if (on) setPill({ width: on.offsetWidth, x: on.offsetLeft - 5 });
+    if (on) {
+      setPill({ width: on.offsetWidth, x: on.offsetLeft - 5 });
+      if (segRef.current) {
+        const scrollLeft = on.offsetLeft - (segRef.current.clientWidth - on.offsetWidth) / 2;
+        segRef.current.scrollTo({ left: Math.max(0, scrollLeft), behavior: 'smooth' });
+      }
+    }
   };
 
   useLayoutEffect(position, [view]);

@@ -37,9 +37,19 @@ export default function CalendarView({ data, admin }) {
   const [inspectDay, setInspectDay] = useState(null); // date string 'YYYY-MM-DD' or null
   const [exporting, setExporting] = useState(false);
 
+  // Selected date for day inspection panel (defaults to today if in month, or first day of month)
+  const [selectedDate, setSelectedDate] = useState(() => {
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    const thisMonthPrefix = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    if (todayStr.startsWith(thisMonthPrefix)) {
+      return todayStr;
+    }
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+  });
+
   useEffect(() => {
     reveal(host.current);
-  }, [currentYear, currentMonth, viewMode, groupFilter, query]);
+  }, [currentYear, currentMonth, viewMode, groupFilter, query, selectedDate]);
 
   // Steppers for Month Navigation
   const prevMonth = () => {
@@ -126,6 +136,39 @@ export default function CalendarView({ data, admin }) {
       console.error('Failed to export monthly PDF', e);
     } finally {
       setExporting(false);
+    }
+  };
+
+  // Synchronize selectedDate when currentYear or currentMonth changes
+  useEffect(() => {
+    const prefix = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
+    if (selectedDate && selectedDate.startsWith(prefix)) return;
+
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    if (todayStr.startsWith(prefix)) {
+      setSelectedDate(todayStr);
+      return;
+    }
+    const firstActive = calendarGrid.find(c => c.isCurrentMonth && (dayClassesMap[c.dateStr] || []).length > 0);
+    if (firstActive) {
+      setSelectedDate(firstActive.dateStr);
+    } else {
+      setSelectedDate(`${prefix}-01`);
+    }
+  }, [currentYear, currentMonth, calendarGrid, dayClassesMap]);
+
+  // Classes for the currently selected date (for quick preview panel)
+  const selectedDayClasses = selectedDate ? (dayClassesMap[selectedDate] || []) : [];
+
+  // Day click handler: sets selectedDate; opens modal on desktop or on double-tap
+  const handleDayClick = (dateStr) => {
+    if (selectedDate === dateStr) {
+      setInspectDay(dateStr);
+    } else {
+      setSelectedDate(dateStr);
+      if (typeof window !== 'undefined' && window.innerWidth > 680) {
+        setInspectDay(dateStr);
+      }
     }
   };
 
@@ -258,6 +301,50 @@ export default function CalendarView({ data, admin }) {
         </div>
       </div>
 
+      {/* ── Integrated Batch Group Filters & Search ── */}
+      <div className="cal-filter-bar rv">
+        <div className="cal-group-chips" role="group" aria-label="Filter calendar by Year Group">
+          <button
+            type="button"
+            className={`cal-group-chip ${groupFilter === 'All' ? 'on' : ''}`}
+            onClick={() => setGroupFilter('All')}
+          >
+            All Batches
+          </button>
+          {availableGroups.map(g => (
+            <button
+              key={g}
+              type="button"
+              className={`cal-group-chip ${getGroupClass(g)} ${groupFilter === g ? 'on' : ''}`}
+              onClick={() => setGroupFilter(g)}
+            >
+              {g}
+            </button>
+          ))}
+        </div>
+
+        <div className="cal-search-wrap">
+          <SearchIcon />
+          <input
+            type="text"
+            className="cal-search-input"
+            placeholder="Search batch, subject, hall, mentor…"
+            value={query}
+            onChange={e => setQuery(e.target.value)}
+          />
+          {query && (
+            <button
+              type="button"
+              className="cal-search-clear"
+              onClick={() => setQuery('')}
+              title="Clear search"
+            >
+              ×
+            </button>
+          )}
+        </div>
+      </div>
+
       {/* ── Monthly Summary Metric Cards ── */}
       <div className="cal-metrics rv">
         <div className="cal-stat">
@@ -288,70 +375,177 @@ export default function CalendarView({ data, admin }) {
 
       {/* ── Grid View: Full 7-Day Month Matrix ── */}
       {viewMode === 'grid' && (
-        <div className="cal-grid-wrapper rv">
-          {/* Weekday Column Headers */}
-          <div className="cal-weekdays">
-            {WEEKDAYS.map((day, idx) => (
-              <div key={day} className={`cal-weekday ${idx >= 5 ? 'weekend' : ''}`}>
-                <span className="name-full">{day}</span>
-                <span className="name-abbr">{WEEKDAYS_SHORT[idx]}</span>
-              </div>
-            ))}
+        <>
+          <div className="cal-grid-wrapper rv">
+            {/* Weekday Column Headers */}
+            <div className="cal-weekdays">
+              {WEEKDAYS.map((day, idx) => (
+                <div key={day} className={`cal-weekday ${idx >= 5 ? 'weekend' : ''}`}>
+                  <span className="name-full">{day}</span>
+                  <span className="name-abbr">{WEEKDAYS_SHORT[idx]}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* 7-column calendar day cells */}
+            <div className="cal-grid-matrix">
+              {calendarGrid.map((cell) => {
+                const classes = dayClassesMap[cell.dateStr] || [];
+                const hasClasses = classes.length > 0;
+                const maxDisplay = 3;
+                const visibleClasses = classes.slice(0, maxDisplay);
+                const overflowCount = classes.length - maxDisplay;
+                const isSelected = cell.dateStr === selectedDate;
+
+                return (
+                  <div
+                    key={cell.dateStr}
+                    className={`cal-day ${cell.isCurrentMonth ? '' : 'out-month'} ${cell.isToday ? 'is-today' : ''} ${cell.isWeekend ? 'weekend-day' : ''} ${isSelected ? 'is-selected' : ''}`}
+                    onClick={() => handleDayClick(cell.dateStr)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={e => { if (e.key === 'Enter') handleDayClick(cell.dateStr); }}
+                    title={`View schedule for ${cell.dateStr} (${classes.length} class${classes.length === 1 ? '' : 'es'})`}
+                  >
+                    <div className="cal-day-head">
+                      <span className="cal-day-num">{cell.dayNumber}</span>
+                      {hasClasses ? (
+                        <span className="cal-day-classes-badge">
+                          {classes.length} {classes.length === 1 ? 'class' : 'classes'}
+                        </span>
+                      ) : cell.isWeekend ? (
+                        <span className="cal-day-weekend-label">Off</span>
+                      ) : null}
+                    </div>
+
+                    {/* Mobile Compact Class Indicator (Visible on mobile <= 680px) */}
+                    <div className="cal-mobile-indicator">
+                      {hasClasses ? (
+                        <>
+                          <div className="cal-mobile-dots">
+                            {visibleClasses.slice(0, 3).map((c, i) => (
+                              <span key={i} className={`cal-mob-dot ${getGroupClass(c.group)}`} />
+                            ))}
+                          </div>
+                          <span className="cal-mob-count">{classes.length}</span>
+                        </>
+                      ) : cell.isWeekend ? (
+                        <span className="cal-mob-weekend-off">Off</span>
+                      ) : null}
+                    </div>
+
+                    {/* Desktop Full Class Chips (Hidden on mobile <= 680px) */}
+                    <div className="cal-desktop-classes">
+                      {visibleClasses.map((c, i) => (
+                        <div key={i} className={`cal-class-chip ${getGroupClass(c.group)}`}>
+                          <div className="cal-chip-top">
+                            <span className="cal-chip-slot">{c.slotLabel}</span>
+                            <span className="cal-chip-hall">{abbreviateVenue(c.venue)}</span>
+                          </div>
+                          <div className="cal-chip-subj">{c.subject}</div>
+                          <div className="cal-chip-batch">{c.batchName}</div>
+                        </div>
+                      ))}
+
+                      {overflowCount > 0 && (
+                        <div className="cal-more-classes">
+                          +{overflowCount} more class{overflowCount === 1 ? '' : 'es'}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
 
-          {/* 7-column calendar day cells */}
-          <div className="cal-grid-matrix">
-            {calendarGrid.map((cell) => {
-              const classes = dayClassesMap[cell.dateStr] || [];
-              const hasClasses = classes.length > 0;
-              const maxDisplay = 3;
-              const visibleClasses = classes.slice(0, maxDisplay);
-              const overflowCount = classes.length - maxDisplay;
-
-              return (
-                <div
-                  key={cell.dateStr}
-                  className={`cal-day ${cell.isCurrentMonth ? '' : 'out-month'} ${cell.isToday ? 'is-today' : ''} ${cell.isWeekend ? 'weekend-day' : ''}`}
-                  onClick={() => setInspectDay(cell.dateStr)}
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={e => { if (e.key === 'Enter') setInspectDay(cell.dateStr); }}
-                  title={`View schedule for ${cell.dateStr} (${classes.length} class${classes.length === 1 ? '' : 'es'})`}
-                >
-                  <div className="cal-day-head">
-                    <span className="cal-day-num">{cell.dayNumber}</span>
-                    {hasClasses ? (
-                      <span className="cal-day-classes-badge">
-                        {classes.length} {classes.length === 1 ? 'class' : 'classes'}
+          {/* Selected Day Schedule Section: Immediately accessible below grid on mobile and desktop */}
+          {selectedDate && (
+            <div className="cal-day-panel rv">
+              <div className="cal-day-panel-head">
+                <div>
+                  <h4 className="cal-day-panel-title">
+                    {formatDateLong(selectedDate)}
+                  </h4>
+                  <div className="cal-day-panel-meta">
+                    <span className="cal-panel-pill">
+                      <b>{selectedDayClasses.length}</b> {selectedDayClasses.length === 1 ? 'class' : 'classes'} scheduled
+                    </span>
+                    {selectedDayClasses.length > 0 && (
+                      <span className="cal-panel-pill">
+                        <b>{new Set(selectedDayClasses.flatMap(c => c.mainTrainers || [])).size}</b> mentors
                       </span>
-                    ) : cell.isWeekend ? (
-                      <span className="cal-day-weekend-label">Off</span>
-                    ) : null}
-                  </div>
-
-                  <div className="cal-day-classes">
-                    {visibleClasses.map((c, i) => (
-                      <div key={i} className={`cal-class-chip ${getGroupClass(c.group)}`}>
-                        <div className="cal-chip-top">
-                          <span className="cal-chip-slot">{c.slotLabel}</span>
-                          <span className="cal-chip-hall">{abbreviateVenue(c.venue)}</span>
-                        </div>
-                        <div className="cal-chip-subj">{c.subject}</div>
-                        <div className="cal-chip-batch">{c.batchName}</div>
-                      </div>
-                    ))}
-
-                    {overflowCount > 0 && (
-                      <div className="cal-more-classes">
-                        +{overflowCount} more class{overflowCount === 1 ? '' : 'es'}
-                      </div>
+                    )}
+                    {selectedDayClasses.length > 0 && (
+                      <span className="cal-panel-pill">
+                        <b>{new Set(selectedDayClasses.map(c => c.venue)).size}</b> halls
+                      </span>
                     )}
                   </div>
                 </div>
-              );
-            })}
-          </div>
-        </div>
+
+                {selectedDayClasses.length > 0 && (
+                  <button
+                    type="button"
+                    className="btn btn-ghost btn-sm cal-panel-more-btn"
+                    onClick={() => setInspectDay(selectedDate)}
+                  >
+                    Full Details Modal ↗
+                  </button>
+                )}
+              </div>
+
+              {!selectedDayClasses.length ? (
+                <div className="cal-day-panel-empty">
+                  <p>No training sessions scheduled for {formatDateLong(selectedDate)}.</p>
+                  <span>
+                    {new Date(selectedDate + 'T00:00:00').getDay() === 0 || new Date(selectedDate + 'T00:00:00').getDay() === 6
+                      ? 'Weekend off — no faculty or batches allocated.'
+                      : 'Classes may be inactive or outside the tentative training dates.'}
+                  </span>
+                </div>
+              ) : (
+                <div className="cal-day-panel-cards">
+                  {selectedDayClasses.map((c, i) => (
+                    <div key={i} className={`cal-day-card ${getGroupClass(c.group)}`}>
+                      <div className="cal-day-card-top">
+                        <div className="cal-card-time-wrap">
+                          <span className="cal-card-slot">{c.slotLabel}</span>
+                          <span className="cal-card-time">{c.time}</span>
+                        </div>
+                        <span className="tag dept">{c.group}</span>
+                      </div>
+                      <div className="cal-day-card-subj">{c.subject}</div>
+                      <div className="cal-day-card-batch">
+                        <b>{c.batchName}</b>
+                        {c.dept && <span> · Dept: {c.dept}</span>}
+                        {c.count > 0 && <span> · ({c.count} students)</span>}
+                      </div>
+                      <div className="cal-day-card-meta">
+                        <div className="meta-item">
+                          <span className="lbl">Hall:</span>
+                          <span className="val">📍 {c.venue}</span>
+                        </div>
+                        <div className="meta-item">
+                          <span className="lbl">Mentors:</span>
+                          <span className="val">
+                            👨‍🏫 {(c.mainTrainers || []).join(', ') || 'TBA'}
+                            {!!(c.supportTrainers || []).length && ` · (Support: ${c.supportTrainers.join(', ')})`}
+                          </span>
+                        </div>
+                      </div>
+                      {(c.startDate || c.endDate) && (
+                        <div className="cal-day-card-window">
+                          📅 Tentative Window: {formatDateRange(c.startDate, c.endDate)}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </>
       )}
 
       {/* ── Agenda View: Chronological Day-by-Day List ── */}
