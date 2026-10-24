@@ -1,6 +1,10 @@
 {
   "rewrites": [
     {
+      "source": "/api-ii/:path*",
+      "destination": "https://torii-schedule-api-ii.onrender.com/api/:path*"
+    },
+    {
       "source": "/api/:path*",
       "destination": "https://torii-schedule-api.onrender.com/api/:path*"
     },

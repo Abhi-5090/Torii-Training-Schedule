@@ -1,15 +1,46 @@
-const RAW_API_URL = import.meta.env.VITE_API_URL || 'https://torii-schedule-api.onrender.com';
-const API_BASE = RAW_API_URL.replace(/\/+$/, '');
+/* Backends in order of preference, comma-separated. The defaults are Vercel
+   rewrites (see vercel.json), so the session cookie stays first-party:
+   /api → torii-schedule-api, /api-ii → torii-schedule-api-ii. */
+const API_BASES = (import.meta.env.VITE_API_URL || '/api,/api-ii')
+  .split(',')
+  .map(base => base.trim().replace(/\/+$/, ''))
+  .filter(Boolean);
+
+/* Whichever backend last answered goes first, so a dead one costs one miss. */
+let preferred = 0;
+
+/* A thrown fetch or a gateway error means that backend never handled the
+   request, so it is safe to try the next one. */
+const isDown = res => [502, 503, 504].includes(res.status)
+  || (!res.ok && !(res.headers.get('content-type') || '').includes('application/json'));
 
 /* Every call carries the session cookie; nothing here reads or stores a token. */
 async function call(path, { method = 'GET', body } = {}) {
-  const url = API_BASE.startsWith('http') ? `${API_BASE}/api${path}` : `${API_BASE}${path}`;
-  const res = await fetch(url, {
+  const init = {
     method,
     credentials: 'include',
     headers: body ? { 'Content-Type': 'application/json' } : undefined,
     body: body ? JSON.stringify(body) : undefined,
-  });
+  };
+
+  let res;
+  let lastError;
+  for (let i = 0; i < API_BASES.length; i++) {
+    const index = (preferred + i) % API_BASES.length;
+    const base = API_BASES[index];
+    const url = base.startsWith('http') ? `${base}/api${path}` : `${base}${path}`;
+    try {
+      res = await fetch(url, init);
+    } catch (err) {
+      lastError = err;
+      res = undefined;
+      continue;
+    }
+    if (isDown(res) && i < API_BASES.length - 1) continue;
+    preferred = index;
+    break;
+  }
+  if (!res) throw lastError || new Error('Could not reach the server');
 
   const text = await res.text();
   let data = null;
