@@ -1,13 +1,15 @@
+
 {
   "name": "torii-backend",
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Torii training schedule API — Express + MongoDB",
+  "description": "Torii training schedule API - Express + MongoDB",
   "scripts": {
     "dev": "node --watch src/server.js",
     "start": "node src/server.js",
-    "seed": "node src/seed/seed.js"
+    "seed": "node src/seed/seed.js",
+    "deploy": "wrangler deploy"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
@@ -17,5 +19,8 @@
     "express": "^4.19.2",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.5.1"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
   }
 }
