@@ -9,10 +9,35 @@ const API_BASES = (import.meta.env.VITE_API_URL || '/api,/api-ii')
 /* Whichever backend last answered goes first, so a dead one costs one miss. */
 let preferred = 0;
 
-/* A thrown fetch or a gateway error means that backend never handled the
-   request, so it is safe to try the next one. */
+/* The API only ever answers in JSON. A gateway error or an HTML page (Render's
+   "suspended" or wake-up page, a Vercel timeout) means that backend never
+   handled the request, so it is safe to try the next one. */
 const isDown = res => [502, 503, 504].includes(res.status)
-  || (!res.ok && !(res.headers.get('content-type') || '').includes('application/json'));
+  || !(res.headers.get('content-type') || '').includes('application/json');
+
+/* Free Render instances sleep after ~15 idle minutes and take up to a minute
+   to wake, so reads keep retrying through that instead of failing at once. */
+const WAKE_WINDOW_MS = 90_000;
+const RETRY_DELAY_MS = 4_000;
+const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+/* One pass over every backend, starting with the last one that answered. */
+async function tryBackends(path, init) {
+  for (let i = 0; i < API_BASES.length; i++) {
+    const index = (preferred + i) % API_BASES.length;
+    const base = API_BASES[index];
+    const url = base.startsWith('http') ? `${base}/api${path}` : `${base}${path}`;
+    try {
+      const res = await fetch(url, init);
+      if (isDown(res)) continue;
+      preferred = index;
+      return res;
+    } catch {
+      /* network error — try the next backend */
+    }
+  }
+  return null;
+}
 
 /* Every call carries the session cookie; nothing here reads or stores a token. */
 async function call(path, { method = 'GET', body } = {}) {
@@ -23,31 +48,25 @@ async function call(path, { method = 'GET', body } = {}) {
     body: body ? JSON.stringify(body) : undefined,
   };
 
-  let res;
-  let lastError;
-  for (let i = 0; i < API_BASES.length; i++) {
-    const index = (preferred + i) % API_BASES.length;
-    const base = API_BASES[index];
-    const url = base.startsWith('http') ? `${base}/api${path}` : `${base}${path}`;
-    try {
-      res = await fetch(url, init);
-    } catch (err) {
-      lastError = err;
-      res = undefined;
-      continue;
-    }
-    if (isDown(res) && i < API_BASES.length - 1) continue;
-    preferred = index;
-    break;
+  /* Only reads are retried; a write that timed out may still have landed. */
+  const started = Date.now();
+  let res = await tryBackends(path, init);
+  while (!res && method === 'GET' && Date.now() - started < WAKE_WINDOW_MS) {
+    await sleep(RETRY_DELAY_MS);
+    res = await tryBackends(path, init);
   }
-  if (!res) throw lastError || new Error('Could not reach the server');
+  if (!res) {
+    const err = new Error('The server is waking up — please try again in a minute.');
+    err.status = 503;
+    throw err;
+  }
 
   const text = await res.text();
   let data = null;
   try {
     data = text ? JSON.parse(text) : null;
   } catch {
-    data = { error: text?.slice(0, 150) || `Server returned ${res.status}` };
+    data = { error: `Server returned ${res.status}` };
   }
 
   if (!res.ok) {
